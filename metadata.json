@@ -1,0 +1,6 @@
+{
+  "name": "PitStop OS Final Project",
+  "description": "Scenario-driven mini-OS simulator modeling CPU scheduling, processes, threads, shared resources, kernel calls, and deadlock in an automotive tire service workshop.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

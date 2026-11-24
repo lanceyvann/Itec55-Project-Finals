@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PitStop OS — Tire Service Workshop Mini-OS Simulator</title>
+    <meta
+      name="description"
+      content="Scenario-driven mini-OS simulator demonstrating processes, threads, CPU scheduling, shared equipment locks, kernel calls, and deadlock in a tire service workshop."
+    />
+    <meta property="og:title" content="PitStop OS — Tire Service Workshop Mini-OS Simulator" />
+    <meta
+      property="og:description"
+      content="Interactive ITEC 55 operating system simulator mapped to automotive tire service operations."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <div class="brand-group">
+          <div class="brand-mark" aria-hidden="true">PS</div>
+          <div>
+            <h1 class="brand-title">PitStop OS</h1>
+            <p class="brand-subtitle" data-i18n="brandSubtitle">
+              Automotive Tire Service Workshop Simulator
+            </p>
+          </div>
+        </div>
+
+        <nav class="top-nav" aria-label="Dashboard sections">
+          <a href="#overview-section" class="nav-link">Overview</a>
+          <a href="#scheduler-section" class="nav-link" data-i18n="navScheduler">Service Bay &amp; Gantt</a>
+          <a href="#pcb-section" class="nav-link" data-i18n="navProcesses">Vehicle Records</a>
+          <a href="#resources-section" class="nav-link" data-i18n="navResources">Mechanics &amp; Equipment</a>
+          <a href="#kernel-section" class="nav-link" data-i18n="navKernel">Operations Log</a>
+        </nav>
+
+        <div class="header-actions">
+          <div class="mode-readout" id="kernel-mode-indicator" title="Current CPU Privilege Mode">
+            <span class="mode-label">Mode:</span>
+            <span class="mode-value" id="mode-value-text">User Mode</span>
+          </div>
+
+          <button
+            type="button"
+            id="dual-view-toggle"
+            class="btn btn-secondary"
+            title="Switch between Tire Shop Story View and Operating System View"
+          >
+            View: Story Mode
+          </button>
+
+          <button
+            type="button"
+            id="open-guide-btn"
+            class="btn btn-secondary"
+            title="Open Story Mode & OS Mode Concept Guide"
+          >
+            Guide
+          </button>
+
+          <button type="button" id="open-add-job-btn" class="btn btn-primary" data-i18n="addJobBtn">
+            + Add Vehicle Job
+          </button>
+        </div>
+      </header>
+
+      <!-- Simulation Control Toolbar -->
+      <section class="control-toolbar" aria-label="Simulation controls">
+        <div class="control-group">
+          <button type="button" id="btn-start" class="btn btn-primary">Start</button>
+          <button type="button" id="btn-pause" class="btn btn-secondary" disabled>Pause</button>
+          <button type="button" id="btn-step" class="btn btn-secondary">Step (+1 Tick)</button>
+          <button type="button" id="btn-reset" class="btn btn-danger-outline">Reset</button>
+        </div>
+
+        <div class="control-group">
+          <label class="field-inline" for="algo-select">
+            <span>Algorithm</span>
+            <select id="algo-select" class="select-input">
+              <option value="FCFS">FCFS (First-Come, First-Served)</option>
+              <option value="SJF">SJF (Non-Preemptive)</option>
+              <option value="RR">Round Robin (RR)</option>
+              <option value="PRIORITY">Priority Scheduling</option>
+            </select>
+          </label>
+
+          <label class="field-inline" for="quantum-input" id="quantum-wrapper">
+            <span>Quantum</span>
+            <input
+              type="number"
+              id="quantum-input"
+              class="number-input"
+              min="1"
+              max="10"
+              value="2"
+            />
+          </label>
+
+          <label class="field-inline" for="speed-select">
+            <span>Speed</span>
+            <select id="speed-select" class="select-input">
+              <option value="1200">Slow (1.2s)</option>
+              <option value="700" selected>Normal (0.7s)</option>
+              <option value="300">Fast (0.3s)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="control-group">
+          <label class="field-inline" for="preset-select">
+            <span>Preset</span>
+            <select id="preset-select" class="select-input">
+              <option value="balanced">Balanced Shop Mix</option>
+              <option value="cpu-heavy">CPU-Heavy (Long Bursts)</option>
+              <option value="io-heavy">I/O-Heavy (Frequent Locks)</option>
+            </select>
+          </label>
+          <button type="button" id="btn-load-preset" class="btn btn-secondary">Load</button>
+          <div class="tick-counter">
+            <span>Tick</span>
+            <strong id="tick-display" class="tabular">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Dashboard Content -->
+      <main class="dashboard-main">
+        <!-- Summary Cards (Section A) -->
+        <section id="overview-section" class="kpi-grid" aria-label="Dashboard summary">
+          <article class="kpi-card">
+            <span class="kpi-label" data-i18n="kpiTotal">Total Vehicle Jobs</span>
+            <strong class="kpi-value tabular" id="stat-total-jobs">0</strong>
+          </article>
+
+          <article class="kpi-card">
+            <span class="kpi-label" data-i18n="kpiRunning">Undergoing Tire Service</span>
+            <strong class="kpi-value tabular text-green" id="stat-running-jobs">0</strong>
+          </article>
+
+          <article class="kpi-card">
+            <span class="kpi-label" data-i18n="kpiWaiting">Waiting for Equipment</span>
+            <strong class="kpi-value tabular text-amber" id="stat-waiting-jobs">0</strong>
+          </article>
+
+          <article class="kpi-card">
+            <span class="kpi-label" data-i18n="kpiCompleted">Service Completed</span>
+            <strong class="kpi-value tabular text-muted" id="stat-completed-jobs">0</strong>
+          </article>
+
+          <article class="kpi-card">
+            <span class="kpi-label">Scheduling Algorithm</span>
+            <strong class="kpi-value kpi-value-sm" id="stat-algorithm">FCFS</strong>
+          </article>
+
+          <article class="kpi-card">
+            <span class="kpi-label" data-i18n="kpiUtilization">Active Bay Utilization</span>
+            <strong class="kpi-value tabular text-orange" id="stat-cpu-util">0%</strong>
+          </article>
+        </section>
+
+        <!-- Top Two-Column Workspace: Scheduler/Gantt + Threads/Equipment -->
+        <div class="workspace-grid">
+          <!-- Left / Main Column -->
+          <div class="workspace-primary">
+            <!-- Active Service Bay & Queues -->
+            <section id="scheduler-section" class="panel">
+              <div class="panel-header">
+                <h2 class="panel-title" data-i18n="baySectionTitle">Active Service Bay &amp; Queues</h2>
+                <span class="panel-meta tabular" id="context-switch-meta">
+                  <span data-i18n="contextSwitchLabel">Service Bay Changeovers</span>:
+                  <strong id="stat-context-switches">0</strong>
+                </span>
+              </div>
+
+              <div class="bay-and-queues">
+                <div class="active-bay-box">
+                  <div class="sub-label" data-i18n="cpuLabel">Active Service Bay (Running)</div>
+                  <div id="active-bay-card" class="bay-empty">
+                    No vehicle currently in bay (Idle)
+                  </div>
+                </div>
+
+                <div class="queues-stack">
+                  <div class="queue-box">
+                    <div class="sub-label" data-i18n="readyQueueLabel">
+                      Vehicles Waiting for Service (Ready Queue)
+                    </div>
+                    <div id="ready-queue-list" class="queue-items">
+                      <span class="empty-hint">Queue empty</span>
+                    </div>
+                  </div>
+
+                  <div class="queue-box">
+                    <div class="sub-label" data-i18n="waitingQueueLabel">
+                      Waiting for Equipment / I/O (Waiting Queue)
+                    </div>
+                    <div id="waiting-queue-list" class="queue-items">
+                      <span class="empty-hint">No vehicles waiting</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Gantt Chart, Metrics & Why Explainer -->
+            <section class="panel panel-grow">
+              <div class="panel-header">
+                <h2 class="panel-title">Live Gantt Chart &amp; Performance Metrics</h2>
+                <span class="panel-meta">Click any Gantt block to inspect "Why?"</span>
+              </div>
+
+              <div id="gantt-legend" class="gantt-legend" aria-label="Gantt chart legend"></div>
+
+              <div id="gantt-chart" class="gantt-track" aria-label="Scheduling Gantt chart">
+                <div class="empty-hint">Start or step the simulation to record timeline ticks.</div>
+              </div>
+
+              <div class="metrics-strip">
+                <div class="metric-cell">
+                  <span>Avg Waiting Time</span>
+                  <strong class="tabular" id="metric-avg-wait">0.00</strong>
+                </div>
+                <div class="metric-cell">
+                  <span>Avg Turnaround Time</span>
+                  <strong class="tabular" id="metric-avg-turnaround">0.00</strong>
+                </div>
+                <div class="metric-cell">
+                  <span>Avg Response Time</span>
+                  <strong class="tabular" id="metric-avg-response">0.00</strong>
+                </div>
+                <div class="metric-cell">
+                  <span data-i18n="metricUtilLabel">Bay Utilization</span>
+                  <strong class="tabular" id="metric-utilization">0.0%</strong>
+                </div>
+              </div>
+
+              <div id="metrics-breakdown-note" class="metrics-breakdown-note tabular">
+                Completed: 0 / 0 jobs · Busy: 0 / 0 ticks · Throughput: 0.00 jobs/tick
+              </div>
+
+              <!-- Why Explainer Panel -->
+              <div class="why-box" id="why-explainer-box">
+                <div class="why-header">
+                  <div class="sub-label">"Why?" Scheduling Decision Explainer</div>
+                  <div class="why-controls">
+                    <select
+                      id="why-decision-select"
+                      class="select-input select-sm"
+                      aria-label="Select scheduling decision tick"
+                      disabled
+                    >
+                      <option value="">No decisions yet</option>
+                    </select>
+                    <button
+                      type="button"
+                      id="btn-why-jump-tick"
+                      class="btn btn-secondary btn-sm"
+                      disabled
+                    >
+                      View in Time Machine
+                    </button>
+                  </div>
+                </div>
+                <p id="why-explainer-text" class="why-text">
+                  Select a block in the Gantt chart above to view why the scheduler picked that
+                  vehicle service job at that tick.
+                </p>
+              </div>
+            </section>
+          </div>
+
+          <!-- Right / Secondary Column -->
+          <aside class="workspace-secondary">
+            <!-- Thread Management (TCB) -->
+            <section id="resources-section" class="panel">
+              <div class="panel-header">
+                <h2 class="panel-title" data-i18n="threadTitle">
+                  Mechanic Service Tasks (Threads / TCB)
+                </h2>
+                <span class="panel-meta" id="selected-process-label">No job selected</span>
+              </div>
+
+              <div class="thread-shared-box">
+                <div class="sub-label" data-i18n="sharedResourcesLabel">Shared Work-Order Resources</div>
+                <p id="shared-resources-text" class="muted-note">
+                  Select a vehicle job from the table to inspect shared work-order memory and
+                  individual mechanic thread registers.
+                </p>
+              </div>
+
+              <div class="table-wrap">
+                <table class="data-table data-table-compact">
+                  <thead>
+                    <tr>
+                      <th data-i18n="colTid">Task ID</th>
+                      <th data-i18n="colTaskName">Mechanic Task</th>
+                      <th data-i18n="colTcbState">Task Status</th>
+                      <th data-i18n="colPrivateRegs">Private Registers</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tcb-table-body">
+                    <tr>
+                      <td colspan="4" class="empty-cell">No threads to display.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Shared Equipment Resources & Deadlock Demo -->
+            <section class="panel panel-grow">
+              <div class="panel-header">
+                <h2 class="panel-title" data-i18n="equipmentTitle">
+                  Service Equipment &amp; Mutex Locks
+                </h2>
+                <span class="panel-meta" id="deadlock-status-label">Status: Normal</span>
+              </div>
+
+              <div class="resource-cards" id="resource-cards">
+                <div class="resource-card">
+                  <div class="resource-top">
+                    <strong>Pneumatic Tire Changer</strong>
+                    <span class="status-text text-green">Available</span>
+                  </div>
+                  <div class="resource-meta">Owner: None · Waiting: None</div>
+                </div>
+
+                <div class="resource-card">
+                  <div class="resource-top">
+                    <strong>Digital Dynamic Wheel Balancer</strong>
+                    <span class="status-text text-green">Available</span>
+                  </div>
+                  <div class="resource-meta">Owner: None · Waiting: None</div>
+                </div>
+              </div>
+
+              <div class="deadlock-box" id="deadlock-panel">
+                <div class="deadlock-header">
+                  <strong class="deadlock-title">Deadlock Demonstration</strong>
+                  <div class="deadlock-actions">
+                    <button type="button" id="btn-deadlock-demo" class="btn btn-secondary btn-sm">
+                      Run Deadlock Demo
+                    </button>
+                    <button
+                      type="button"
+                      id="btn-resolve-deadlock"
+                      class="btn btn-danger-outline btn-sm"
+                      disabled
+                    >
+                      Resolve
+                    </button>
+                  </div>
+                </div>
+                <p id="deadlock-explanation" class="muted-note">
+                  Triggers a 2-job circular wait between Pneumatic Tire Changer and Digital Dynamic
+                  Wheel Balancer.
+                </p>
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        <!-- Full-Width Vehicle Service Records / PCB Table -->
+        <section id="pcb-section" class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title" data-i18n="pcbTableTitle">
+              Vehicle Service Records (Process Control Blocks)
+            </h2>
+            <span class="panel-meta" data-i18n="pcbHint">Click a vehicle record to view mechanic tasks</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colPid">Job ID</th>
+                  <th data-i18n="colPpid">Parent Job</th>
+                  <th data-i18n="colJobName">Vehicle Job</th>
+                  <th data-i18n="colServiceType">Service Type</th>
+                  <th data-i18n="colPcbState">Shop Status</th>
+                  <th>Priority</th>
+                  <th>Arrival</th>
+                  <th data-i18n="colBurst">Service / Equip</th>
+                  <th>Remaining</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pcb-table-body">
+                <tr>
+                  <td colspan="10" class="empty-cell">No vehicle service jobs loaded.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Bottom Two-Column Workspace: Kernel Log & Time Machine -->
+        <div class="workspace-bottom-grid">
+          <!-- Kernel & System Calls -->
+          <section id="kernel-section" class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title" data-i18n="kernelTitle">
+                Shop Operations Manager (Kernel Log)
+              </h2>
+              <button type="button" id="btn-clear-log" class="btn btn-secondary btn-sm">
+                Clear
+              </button>
+            </div>
+
+            <div class="syscall-bar" aria-label="Manual system calls">
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="createThread">
+                createThread()
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="joinThread">
+                joinThread()
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="requestIO">
+                requestIO()
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="yieldProcess">
+                yieldProcess()
+              </button>
+            </div>
+
+            <div id="kernel-log-list" class="kernel-log" aria-live="polite">
+              <div class="log-entry">
+                <span class="log-tick tabular">[T0]</span>
+                <span class="log-text">PitStop OS ready. Waiting for simulation start.</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Time Machine -->
+          <section class="panel time-machine-panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Time Machine (Snapshots)</h2>
+              <span class="panel-meta tabular" id="snapshot-count-label">0 snapshots</span>
+            </div>
+
+            <p class="muted-note">
+              Scrub backward or forward through saved simulation ticks to inspect any past state,
+              then click <strong>Resume Here</strong> to branch a new timeline from that tick.
+            </p>
+
+            <div class="time-machine-controls">
+              <button type="button" id="btn-tm-prev" class="btn btn-secondary btn-sm" disabled>
+                Prev Tick
+              </button>
+              <input
+                type="range"
+                id="tm-slider"
+                class="tm-slider"
+                min="0"
+                max="0"
+                value="0"
+                disabled
+              />
+              <button type="button" id="btn-tm-next" class="btn btn-secondary btn-sm" disabled>
+                Next Tick
+              </button>
+            </div>
+
+            <div class="time-machine-footer">
+              <span id="tm-status-text" class="muted-note">Viewing live state</span>
+              <button type="button" id="btn-tm-resume" class="btn btn-primary btn-sm" disabled>
+                Resume Here
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal: Add / Edit Vehicle Service Job (Process) -->
+    <div id="add-job-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="add-job-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="add-job-title">Add Vehicle Service Job</h2>
+          <button type="button" id="close-add-job-btn" class="btn btn-secondary btn-sm">
+            Close
+          </button>
+        </div>
+
+        <form id="add-job-form" class="modal-form">
+          <label class="form-field">
+            <span data-i18n="fieldJobName">Vehicle / Job Name</span>
+            <input
+              type="text"
+              id="input-job-name"
+              placeholder="e.g., Sedan Civic - Front Tires"
+              required
+            />
+          </label>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span data-i18n="fieldServiceType">Tire Service Type</span>
+              <select id="input-service-type">
+                <option value="Tire Replacement">Tire Replacement</option>
+                <option value="Wheel Balancing">Wheel Balancing</option>
+                <option value="Tire Inspection">Tire Inspection</option>
+              </select>
+            </label>
+
+            <label class="form-field">
+              <span>Priority (1 = Highest)</span>
+              <input type="number" id="input-priority" min="1" max="10" value="2" required />
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Arrival Tick</span>
+              <input type="number" id="input-arrival" min="0" max="100" value="0" required />
+            </label>
+
+            <label class="form-field">
+              <span data-i18n="fieldCpuBurst">Bay Service (Ticks)</span>
+              <input type="number" id="input-cpu-burst" min="1" max="30" value="5" required />
+            </label>
+
+            <label class="form-field">
+              <span data-i18n="fieldIoBurst">Equip Wait (Ticks)</span>
+              <input type="number" id="input-io-burst" min="0" max="15" value="2" required />
+            </label>
+          </div>
+
+          <label class="form-field">
+            <span data-i18n="fieldParentPid">Parent Job (Optional)</span>
+            <select id="input-parent-pid">
+              <option value="">None (Top-level vehicle job)</option>
+            </select>
+          </label>
+
+          <div class="modal-footer">
+            <button type="button" id="cancel-add-job-btn" class="btn btn-secondary">Cancel</button>
+            <button type="submit" id="submit-job-btn" class="btn btn-primary">Create Service Job</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: PCB Inspector -->
+    <div id="pcb-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="pcb-modal-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="pcb-modal-title" data-i18n="pcbModalTitle">Vehicle Service Record (PCB)</h2>
+          <button type="button" id="close-pcb-modal-btn" class="btn btn-secondary btn-sm">
+            Close
+          </button>
+        </div>
+        <div id="pcb-modal-body" class="pcb-detail-body"></div>
+      </div>
+    </div>
+
+    <!-- Modal: User & Concept Guide -->
+    <div id="guide-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+      <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+          <h2 id="guide-modal-title">PitStop OS — Concept &amp; Quick Guide</h2>
+          <button type="button" id="close-guide-modal-btn" class="btn btn-secondary btn-sm">
+            Close
+          </button>
+        </div>
+
+        <div class="guide-body">
+          <section class="guide-section">
+            <h3 class="guide-heading">Story Mode vs. OS Mode Terminology</h3>
+            <p class="muted-note">
+              Both views run the exact same live operating system simulation. Use the
+              <strong>View: Story Mode / OS Mode</strong> button in the header to switch labels anytime.
+            </p>
+            <div class="table-wrap">
+              <table class="data-table data-table-compact">
+                <thead>
+                  <tr>
+                    <th>Story Mode (Tire Workshop)</th>
+                    <th>OS Mode (Operating System)</th>
+                    <th>What It Represents</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Shop Operations Manager</td>
+                    <td>OS Kernel</td>
+                    <td>Manages jobs, queues, syscalls, and hardware locks</td>
+                  </tr>
+                  <tr>
+                    <td>Active Service Bay</td>
+                    <td>CPU</td>
+                    <td>Executes 1 active process/job per simulation tick</td>
+                  </tr>
+                  <tr>
+                    <td>Vehicle Service Job</td>
+                    <td>Process</td>
+                    <td>An independent work order with its own ID &amp; burst</td>
+                  </tr>
+                  <tr>
+                    <td>Vehicle Service Record</td>
+                    <td>PCB (Process Control Block)</td>
+                    <td>Stores ID, parent, state, priority, registers &amp; metrics</td>
+                  </tr>
+                  <tr>
+                    <td>Mechanic Service Task</td>
+                    <td>Thread (TCB)</td>
+                    <td>Sub-tasks sharing the job's memory/work order</td>
+                  </tr>
+                  <tr>
+                    <td>Equipment Lock</td>
+                    <td>Mutex Lock</td>
+                    <td>Exclusive lock on Tire Changer or Wheel Balancer</td>
+                  </tr>
+                  <tr>
+                    <td>Service Bay Changeover</td>
+                    <td>Context Switch (CS)</td>
+                    <td>Switching the CPU/bay from one job to another</td>
+                  </tr>
+                  <tr>
+                    <td>Checked In / Waiting for Service / Undergoing Service / Waiting for Equipment / Completed</td>
+                    <td>New / Ready / Running / Waiting / Terminated</td>
+                    <td>5-State Process Lifecycle</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="guide-section">
+            <h3 class="guide-heading">Quick Controls &amp; Standout Features</h3>
+            <ul class="guide-list">
+              <li><strong>Playback &amp; Scheduling:</strong> Use <strong>Start</strong>, <strong>Pause</strong>, or <strong>Step (+1 Tick)</strong> and compare <strong>FCFS</strong>, <strong>SJF</strong>, <strong>Round Robin</strong> (with configurable Quantum), and <strong>Priority</strong> across 3 shop presets.</li>
+              <li><strong>Process CRUD &amp; Hierarchy:</strong> Click <strong>+ Add Vehicle Job / + Add Process</strong> to create jobs, <strong>Edit</strong> to modify bursts/priority/name, <strong>+ Child</strong> to spawn a linked PPID sub-job, <strong>Terminate</strong> to halt execution, or <strong>Delete</strong> to remove a record.</li>
+              <li><strong>"Why?" Explainer &amp; Time Machine:</strong> Click any Gantt block to see why that job was chosen at that tick, jump to its snapshot, scrub past ticks, or click <strong>Resume Here</strong> to branch.</li>
+              <li><strong>Deadlock Demo &amp; Syscalls:</strong> Trigger a 2-job circular wait on the Tire Changer &amp; Wheel Balancer and resolve it, or test manual <code>createThread()</code>, <code>joinThread()</code>, <code>requestIO()</code>, and <code>yieldProcess()</code> traps.</li>
+            </ul>
+          </section>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="ack-guide-btn" class="btn btn-primary">Got It</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>
