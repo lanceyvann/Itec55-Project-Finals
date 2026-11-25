@@ -20,7 +20,7 @@ export const SERVICE_TYPES = [
 
 // Internal module state
 let processList = [];
-let nextPid = 101;
+let nextPid = 1;
 let selectedPid = null;
 
 /**
@@ -36,6 +36,9 @@ export function createPCB({
   ppid = null,
   currentTick = 0,
 }) {
+  while (processList.some((p) => p.pid === nextPid)) {
+    nextPid++;
+  }
   const pid = nextPid++;
   const safeCpuBurst = Math.max(1, Number(cpuBurst) || 1);
   const safeIoBurst = Math.max(0, Number(ioBurst) || 0);
@@ -344,6 +347,59 @@ export function resetProcesses(starterJobs = []) {
 
   for (const job of starterJobs) {
     addProcess(job, 0);
+  }
+}
+
+/**
+ * Restores all existing processes (default + Rush Hour + user-added)
+ * back to their initial Tick 0 execution state without deleting records.
+ */
+export function resetProcessesForReplay() {
+  let maxPid = 100;
+
+  for (const pcb of processList) {
+    if (pcb.pid > maxPid) {
+      maxPid = pcb.pid;
+    }
+
+    pcb.state = PROCESS_STATES.NEW;
+    pcb.remainingTime = pcb.cpuBurst;
+    pcb.ioRemaining = pcb.ioBurst;
+    pcb.ioTriggered = false;
+    pcb.quantumUsed = 0;
+    pcb.startTime = null;
+    pcb.completionTime = null;
+    pcb.waitingTime = 0;
+    pcb.heldResources = [];
+    pcb.waitingForResource = null;
+    pcb.registers = {
+      PC: `0x${(pcb.pid * 16).toString(16).toUpperCase()}`,
+      ACC: 0,
+      IR: 'LOAD_JOB',
+      SP: `0x${(4096 + pcb.pid * 4).toString(16).toUpperCase()}`,
+    };
+    pcb.transitionHistory = [
+      {
+        tick: 0,
+        from: '-',
+        to: PROCESS_STATES.NEW,
+        reason: 'Simulation reset; process record preserved.',
+      },
+    ];
+
+    if (pcb.arrivalTime <= 0) {
+      transitionProcessState(
+        pcb,
+        PROCESS_STATES.READY,
+        0,
+        'Arrival time reached; admitted to Ready Queue.'
+      );
+    }
+  }
+
+  nextPid = Math.max(nextPid, maxPid + 1);
+  if (!getProcessByPid(selectedPid)) {
+    selectedPid = processList.length > 0 ? processList[0].pid : null;
   }
 }
 
