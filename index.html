@@ -4,11 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PitStop OS — Tire Service Workshop Mini-OS Simulator</title>
-    <meta name="description"
-      content="Scenario-driven mini-OS simulator demonstrating processes, threads, CPU scheduling, shared equipment locks, kernel calls, and deadlock in a tire service workshop."/>
-    <meta property="og:title" content="PitStop OS — Tire Service Workshop Mini-OS Simulator"/>
-    <meta property="og:description"
-      content="Interactive ITEC 55 operating system simulator mapped to automotive tire service operations."/>
+    <meta
+      name="description"
+      content="Scenario-driven mini-OS simulator demonstrating processes, threads, CPU scheduling, shared equipment locks, kernel calls, and deadlock in a tire service workshop."
+    />
+    <meta property="og:title" content="PitStop OS — Tire Service Workshop Mini-OS Simulator" />
+    <meta
+      property="og:description"
+      content="Interactive ITEC 55 operating system simulator mapped to automotive tire service operations."
+    />
     <meta property="og:type" content="website" />
     <link rel="stylesheet" href="/css/style.css" />
   </head>
@@ -20,7 +24,9 @@
           <div class="brand-mark" aria-hidden="true">PS</div>
           <div>
             <h1 class="brand-title">PitStop OS</h1>
-            <p class="brand-subtitle" data-i18n="brandSubtitle">Automotive Tire Service Workshop Simulator</p>
+            <p class="brand-subtitle" data-i18n="brandSubtitle">
+              Automotive Tire Service Workshop Simulator
+            </p>
           </div>
         </div>
 
@@ -38,8 +44,13 @@
             <span class="mode-value" id="mode-value-text">User Mode</span>
           </div>
 
-          <button type="button" id="dual-view-toggle" class="btn btn-secondary" 
-            title="Switch between Tire Shop Story View and Operating System View"> View: Story Mode
+          <button
+            type="button"
+            id="dual-view-toggle"
+            class="btn btn-secondary"
+            title="Switch between Tire Shop Story View and Operating System View"
+          >
+            View: Story Mode
           </button>
 
           <button
@@ -78,7 +89,7 @@
           </label>
 
           <label class="field-inline" for="quantum-input" id="quantum-wrapper">
-            <span>Quantum</span>
+            <span data-i18n="labelQuantum">Bay Turn</span>
             <input
               type="number"
               id="quantum-input"
@@ -103,9 +114,9 @@
           <label class="field-inline" for="preset-select">
             <span>Preset</span>
             <select id="preset-select" class="select-input">
-              <option value="balanced">Balanced Shop Mix</option>
-              <option value="cpu-heavy">CPU-Heavy (Long Bursts)</option>
-              <option value="io-heavy">I/O-Heavy (Frequent Locks)</option>
+              <option value="balanced" data-i18n="presetBalanced">Balanced Shop Mix</option>
+              <option value="cpu-heavy" data-i18n="presetCpuHeavy">Bay-Heavy (Long Services)</option>
+              <option value="io-heavy" data-i18n="presetIoHeavy">Equipment-Heavy (Frequent Locks)</option>
             </select>
           </label>
           <button type="button" id="btn-load-preset" class="btn btn-secondary">Load</button>
@@ -113,6 +124,7 @@
             type="button"
             id="btn-rush-hour"
             class="btn btn-secondary"
+            data-i18n="rushHourBtn"
             title="Spawn 2–4 predefined vehicle service jobs"
           >
             Rush Hour
@@ -206,8 +218,8 @@
             <!-- Gantt Chart, Metrics & Why Explainer -->
             <section class="panel panel-grow">
               <div class="panel-header">
-                <h2 class="panel-title">Live Gantt Chart &amp; Performance Metrics</h2>
-                <span class="panel-meta">Click any Gantt block to inspect "Why?"</span>
+                <h2 class="panel-title" data-i18n="ganttTitle">Service Bay Timeline &amp; Shop Metrics</h2>
+                <span class="panel-meta" data-i18n="ganttHint">Click any bay block to inspect "Why?"</span>
               </div>
 
               <div id="gantt-legend" class="gantt-legend" aria-label="Gantt chart legend"></div>
@@ -218,15 +230,15 @@
 
               <div class="metrics-strip">
                 <div class="metric-cell">
-                  <span>Avg Waiting Time</span>
+                  <span data-i18n="metricWaitLabel">Avg Queue Wait</span>
                   <strong class="tabular" id="metric-avg-wait">0.00</strong>
                 </div>
                 <div class="metric-cell">
-                  <span>Avg Turnaround Time</span>
+                  <span data-i18n="metricTurnaroundLabel">Avg Shop Turnaround</span>
                   <strong class="tabular" id="metric-avg-turnaround">0.00</strong>
                 </div>
                 <div class="metric-cell">
-                  <span>Avg Response Time</span>
+                  <span data-i18n="metricResponseLabel">Avg Bay Response</span>
                   <strong class="tabular" id="metric-avg-response">0.00</strong>
                 </div>
                 <div class="metric-cell">
@@ -236,13 +248,13 @@
               </div>
 
               <div id="metrics-breakdown-note" class="metrics-breakdown-note tabular">
-                Completed: 0 / 0 jobs · Busy: 0 / 0 ticks · Throughput: 0.00 jobs/tick
+                Completed: 0 / 0 vehicles · Bay Busy: 0 / 0 ticks · Throughput: 0.00 vehicles/tick
               </div>
 
               <!-- Why Explainer Panel -->
               <div class="why-box" id="why-explainer-box">
                 <div class="why-header">
-                  <div class="sub-label">"Why?" Scheduling Decision Explainer</div>
+                  <div class="sub-label" data-i18n="whyTitle">"Why?" Service Bay Assignment Explainer</div>
                   <div class="why-controls">
                     <select
                       id="why-decision-select"
@@ -250,15 +262,16 @@
                       aria-label="Select scheduling decision tick"
                       disabled
                     >
-                      <option value="">No decisions yet</option>
+                      <option value="">No assignments yet</option>
                     </select>
                     <button
                       type="button"
                       id="btn-why-jump-tick"
                       class="btn btn-secondary btn-sm"
+                      data-i18n="whyJumpBtn"
                       disabled
                     >
-                      View in Time Machine
+                      View in Shift Replay
                     </button>
                   </div>
                 </div>
@@ -337,10 +350,10 @@
 
               <div class="deadlock-box" id="deadlock-panel">
                 <div class="deadlock-header">
-                  <strong class="deadlock-title">Deadlock Demonstration</strong>
+                  <strong class="deadlock-title" data-i18n="deadlockTitle">Shop Gridlock Demonstration</strong>
                   <div class="deadlock-actions">
-                    <button type="button" id="btn-deadlock-demo" class="btn btn-secondary btn-sm">
-                      Run Deadlock Demo
+                    <button type="button" id="btn-deadlock-demo" class="btn btn-secondary btn-sm" data-i18n="deadlockDemoBtn">
+                      Simulate Gridlock
                     </button>
                     <button
                       type="button"
@@ -379,10 +392,10 @@
                   <th data-i18n="colJobName">Vehicle Job</th>
                   <th data-i18n="colServiceType">Service Type</th>
                   <th data-i18n="colPcbState">Shop Status</th>
-                  <th>Priority</th>
-                  <th>Arrival</th>
+                  <th data-i18n="colPriority">Priority</th>
+                  <th data-i18n="colArrival">Check-In</th>
                   <th data-i18n="colBurst">Service / Equip</th>
-                  <th>Remaining</th>
+                  <th data-i18n="colRemaining">Remaining</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -409,24 +422,24 @@
             </div>
 
             <div class="syscall-bar" aria-label="Manual system calls">
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="createThread">
-                createThread()
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="createThread" data-i18n="syscallCreateThread">
+                + Mechanic Task
               </button>
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="joinThread">
-                joinThread()
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="joinThread" data-i18n="syscallJoinThread">
+                Finish Task
               </button>
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="requestIO">
-                requestIO()
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="requestIO" data-i18n="syscallRequestIO">
+                Request Equipment
               </button>
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="yieldProcess">
-                yieldProcess()
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="yieldProcess" data-i18n="syscallYieldProcess">
+                Yield Service Bay
               </button>
             </div>
 
             <div id="kernel-log-list" class="kernel-log" aria-live="polite">
               <div class="log-entry">
                 <span class="log-tick tabular">[T0]</span>
-                <span class="log-text">PitStop OS ready. Waiting for simulation start.</span>
+                <span class="log-text" data-i18n="initialLogPlaceholder">Shop floor ready. Waiting for shift start.</span>
               </div>
             </div>
           </section>
@@ -434,13 +447,13 @@
           <!-- Time Machine -->
           <section class="panel time-machine-panel">
             <div class="panel-header">
-              <h2 class="panel-title">Time Machine (Snapshots)</h2>
+              <h2 class="panel-title" data-i18n="tmTitle">Shift Replay (Time Machine)</h2>
               <span class="panel-meta tabular" id="snapshot-count-label">0 snapshots</span>
             </div>
 
-            <p class="muted-note">
-              Scrub backward or forward through saved simulation ticks to inspect any past state,
-              then click <strong>Resume Here</strong> to branch a new timeline from that tick.
+            <p class="muted-note" data-i18n="tmDesc">
+              Scrub backward or forward through recorded shift ticks to inspect any past bay state,
+              then click Resume Here to branch from that tick.
             </p>
 
             <div class="time-machine-controls">
@@ -462,7 +475,7 @@
             </div>
 
             <div class="time-machine-footer">
-              <span id="tm-status-text" class="muted-note">Viewing live state</span>
+              <span id="tm-status-text" class="muted-note">Viewing live shop floor</span>
               <button type="button" id="btn-tm-resume" class="btn btn-primary btn-sm" disabled>
                 Resume Here
               </button>
@@ -504,14 +517,14 @@
             </label>
 
             <label class="form-field">
-              <span>Priority (1 = Highest)</span>
+              <span data-i18n="fieldPriority">Service Priority (1 = Highest)</span>
               <input type="number" id="input-priority" min="1" max="10" value="2" required />
             </label>
           </div>
 
           <div class="form-row">
             <label class="form-field">
-              <span>Arrival Tick</span>
+              <span data-i18n="fieldArrival">Check-In Tick</span>
               <input type="number" id="input-arrival" min="0" max="100" value="0" required />
             </label>
 
