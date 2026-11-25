@@ -63,41 +63,68 @@ import {
 const VIEW_LABELS = {
   story: {
     brandSubtitle: 'Automotive Tire Service Workshop Simulator',
-    navScheduler: 'Service Bay & Gantt',
+    navScheduler: 'Service Bay & Timeline',
     navProcesses: 'Vehicle Records',
     navResources: 'Mechanics & Equipment',
     navKernel: 'Operations Log',
+    labelQuantum: 'Bay Turn',
+    presetBalanced: 'Balanced Shop Mix',
+    presetCpuHeavy: 'Bay-Heavy (Long Services)',
+    presetIoHeavy: 'Equipment-Heavy (Frequent Locks)',
+    rushHourBtn: 'Rush Hour',
     kpiTotal: 'Total Vehicle Jobs',
     kpiRunning: 'Undergoing Tire Service',
     kpiWaiting: 'Waiting for Equipment',
     kpiCompleted: 'Service Completed',
     kpiUtilization: 'Active Bay Utilization',
-    baySectionTitle: 'Active Service Bay & Queues',
+    baySectionTitle: 'Active Service Bay & Waiting Lines',
     contextSwitchLabel: 'Service Bay Changeovers',
-    cpuLabel: 'Active Service Bay (Running)',
-    readyQueueLabel: 'Vehicles Waiting for Service (Ready Queue)',
-    waitingQueueLabel: 'Waiting for Equipment / I/O (Waiting Queue)',
+    cpuLabel: 'Active Service Bay (In Service)',
+    readyQueueLabel: 'Vehicles Waiting for Bay',
+    waitingQueueLabel: 'Vehicles Waiting for Equipment',
+    ganttTitle: 'Service Bay Timeline & Shop Metrics',
+    ganttHint: 'Click any bay block to inspect "Why?"',
+    metricWaitLabel: 'Avg Bay Line Wait',
+    metricTurnaroundLabel: 'Avg Shop Turnaround',
+    metricResponseLabel: 'Avg Bay Response',
     metricUtilLabel: 'Bay Utilization',
-    pcbTableTitle: 'Vehicle Service Records (Process Control Blocks)',
-    pcbHint: 'Click a vehicle record to view mechanic tasks',
+    whyTitle: '"Why?" Service Bay Assignment Explainer',
+    whyJumpBtn: 'View in Shift Replay',
+    pcbTableTitle: 'Vehicle Service Records',
+    pcbHint: 'Click a vehicle record to inspect mechanic tasks',
     colPid: 'Job ID',
     colPpid: 'Parent Job',
     colJobName: 'Vehicle Job',
     colServiceType: 'Service Type',
     colPcbState: 'Shop Status',
-    colBurst: 'Service / Equip',
-    threadTitle: 'Mechanic Service Tasks (Threads / TCB)',
-    sharedResourcesLabel: 'Shared Work-Order Resources',
+    colPriority: 'Priority',
+    colArrival: 'Check-In',
+    colBurst: 'Bay / Equip',
+    colRemaining: 'Remaining',
+    threadTitle: 'Mechanic Service Tasks',
+    sharedResourcesLabel: 'Shared Work-Order Workspace',
     colTid: 'Task ID',
     colTaskName: 'Mechanic Task',
     colTcbState: 'Task Status',
-    colPrivateRegs: 'Mechanic Clipboard (Private)',
-    equipmentTitle: 'Service Equipment & Mutex Locks',
-    kernelTitle: 'Shop Operations Manager (Kernel Log)',
-    pcbModalTitle: 'Vehicle Service Record (PCB)',
+    colPrivateRegs: 'Mechanic Clipboard',
+    equipmentTitle: 'Shop Equipment & Tool Locks',
+    deadlockTitle: 'Shop Gridlock Demonstration',
+    deadlockDemoBtn: 'Simulate Gridlock',
+    kernelTitle: 'Shop Operations Manager Log',
+    syscallCreateThread: '+ Mechanic Task',
+    syscallJoinThread: 'Finish Task',
+    syscallRequestIO: 'Request Equipment',
+    syscallYieldProcess: 'Yield Service Bay',
+    initialLogPlaceholder: 'Shop floor ready. Waiting for shift start.',
+    tmTitle: 'Shift Replay (Time Machine)',
+    tmDesc:
+      'Scrub backward or forward through recorded shift ticks to inspect any past bay state, then click Resume Here to branch from that tick.',
+    pcbModalTitle: 'Vehicle Service Record',
     addJobBtn: '+ Add Vehicle Job',
     fieldJobName: 'Vehicle / Job Name',
     fieldServiceType: 'Tire Service Type',
+    fieldPriority: 'Service Priority (1 = Highest)',
+    fieldArrival: 'Check-In Tick',
     fieldCpuBurst: 'Bay Service (Ticks)',
     fieldIoBurst: 'Equip Wait (Ticks)',
     fieldParentPid: 'Parent Job (Optional)',
@@ -108,6 +135,11 @@ const VIEW_LABELS = {
     navProcesses: 'PCB Table',
     navResources: 'Threads & Mutexes',
     navKernel: 'Kernel Log',
+    labelQuantum: 'Quantum',
+    presetBalanced: 'Balanced Workload',
+    presetCpuHeavy: 'CPU-Heavy (Long Bursts)',
+    presetIoHeavy: 'I/O-Heavy (Frequent Locks)',
+    rushHourBtn: 'Burst Workload',
     kpiTotal: 'Total Processes',
     kpiRunning: 'Running Processes',
     kpiWaiting: 'Waiting Processes',
@@ -118,7 +150,14 @@ const VIEW_LABELS = {
     cpuLabel: 'CPU (Running Process)',
     readyQueueLabel: 'Ready Queue',
     waitingQueueLabel: 'Waiting Queue (I/O / Mutex)',
+    ganttTitle: 'Live Gantt Chart & Performance Metrics',
+    ganttHint: 'Click any Gantt block to inspect "Why?"',
+    metricWaitLabel: 'Avg Waiting Time',
+    metricTurnaroundLabel: 'Avg Turnaround Time',
+    metricResponseLabel: 'Avg Response Time',
     metricUtilLabel: 'CPU Utilization',
+    whyTitle: '"Why?" Scheduling Decision Explainer',
+    whyJumpBtn: 'View in Time Machine',
     pcbTableTitle: 'Process Control Blocks (PCB)',
     pcbHint: 'Click a PCB row to inspect its TCB threads',
     colPid: 'PID',
@@ -126,7 +165,10 @@ const VIEW_LABELS = {
     colJobName: 'Process Name',
     colServiceType: 'Workload Type',
     colPcbState: 'State',
+    colPriority: 'Priority',
+    colArrival: 'Arrival',
     colBurst: 'Burst (CPU/I/O)',
+    colRemaining: 'Remaining',
     threadTitle: 'Thread Control Blocks (TCB)',
     sharedResourcesLabel: 'Shared Process Resources',
     colTid: 'TID',
@@ -134,11 +176,23 @@ const VIEW_LABELS = {
     colTcbState: 'State',
     colPrivateRegs: 'Private Registers',
     equipmentTitle: 'Shared Resources & Mutex Locks',
+    deadlockTitle: 'Deadlock Demonstration',
+    deadlockDemoBtn: 'Run Deadlock Demo',
     kernelTitle: 'OS Kernel & System Calls Log',
+    syscallCreateThread: 'createThread()',
+    syscallJoinThread: 'joinThread()',
+    syscallRequestIO: 'requestIO()',
+    syscallYieldProcess: 'yieldProcess()',
+    initialLogPlaceholder: 'OS Kernel ready. Waiting for simulation start.',
+    tmTitle: 'Time Machine (Snapshots)',
+    tmDesc:
+      'Scrub backward or forward through saved simulation ticks to inspect any past state, then click Resume Here to branch a new timeline from that tick.',
     pcbModalTitle: 'Process Control Block (PCB) Details',
     addJobBtn: '+ Add Process',
     fieldJobName: 'Process Name',
     fieldServiceType: 'Workload Type',
+    fieldPriority: 'Priority (1 = Highest)',
+    fieldArrival: 'Arrival Tick',
     fieldCpuBurst: 'CPU Burst (Ticks)',
     fieldIoBurst: 'I/O Burst (Ticks)',
     fieldParentPid: 'Parent Process (Optional PPID)',
@@ -151,6 +205,33 @@ const STORY_STATE_LABELS = {
   Running: 'Undergoing Tire Service',
   Waiting: 'Waiting for Equipment',
   Terminated: 'Service Completed',
+};
+
+const STORY_LOG_SOURCES = {
+  BOOT: 'SHOP',
+  KERNEL: 'MANAGER',
+  SYSCALL: 'REQUEST',
+  SCHED: 'BAY',
+  RESOURCE: 'EQUIP',
+  DEADLOCK: 'GRIDLOCK',
+  RECOVERY: 'RECOVERY',
+  RUSHHOUR: 'RUSH HOUR',
+  TIMEMACHINE: 'REPLAY',
+};
+
+const OS_LOG_SOURCES = {
+  RUSHHOUR: 'BURST',
+};
+
+const STORY_SYSCALL_NAMES = {
+  'createProcess()': 'Check-In Vehicle',
+  'terminateProcess()': 'Cancel / Complete Job',
+  'updateProcess()': 'Update Service Order',
+  'deleteProcess()': 'Remove Vehicle Record',
+  'createThread()': 'Add Mechanic Task',
+  'joinThread()': 'Finish Mechanic Task',
+  'requestIO()': 'Request Equipment',
+  'yieldProcess()': 'Yield Service Bay',
 };
 
 let currentViewMode = 'story';
@@ -169,6 +250,311 @@ function formatStateLabel(state) {
 
 function formatId(pid) {
   return currentViewMode === 'story' ? `Job #${pid}` : `PID ${pid}`;
+}
+
+function formatModeLabel(mode) {
+  if (currentViewMode === 'story') {
+    return mode === CPU_MODES.KERNEL ? 'Shop Manager' : 'Shop Floor';
+  }
+  return mode;
+}
+
+function formatLogSource(source) {
+  if (currentViewMode === 'story') {
+    return STORY_LOG_SOURCES[source] || source;
+  }
+  return OS_LOG_SOURCES[source] || source;
+}
+
+function toStoryText(text) {
+  if (typeof text !== 'string' || !text) return text;
+
+  let out = text;
+
+  // Ordered full-sentence / structured translations (canonical OS -> PitStop Story)
+  const exactReplacements = [
+    [
+      'Process created and PCB initialized.',
+      'Vehicle job checked in and service record created.',
+    ],
+    [
+      'Arrival time reached; admitted to Ready Queue.',
+      'Vehicle arrived at check-in; moved to Bay Waiting Line.',
+    ],
+    [
+      'Arrival time updated; admitted to Ready Queue.',
+      'Check-in tick updated; moved to Bay Waiting Line.',
+    ],
+    [
+      'Simulation reset; process record preserved.',
+      'Shift reset; vehicle service record preserved.',
+    ],
+    ['Terminated by user.', 'Cancelled by shop operator.'],
+    ['Terminated manually from PCB table.', 'Cancelled manually from vehicle records.'],
+    ['Terminated via terminateProcess() syscall.', 'Cancelled by Shop Manager request.'],
+    [
+      'Terminated by OS Deadlock Recovery to break circular wait.',
+      'Job cancelled by Shop Manager to break equipment gridlock.',
+    ],
+    [
+      'Kernel booted: OS Kernel initialized in User Mode.',
+      'Shop opened: Shop Operations Manager ready on Shop Floor.',
+    ],
+    ['All processes completed.', 'All vehicle service jobs completed.'],
+    [
+      'Simulation halted: Circular deadlock active. Click Resolve or Reset.',
+      'Shift halted: Equipment gridlock active. Click Resolve or Reset.',
+    ],
+    [
+      'createThread() failed: No active process selected.',
+      'Add Mechanic Task failed: No active vehicle job selected.',
+    ],
+    [
+      'requestIO() failed: Target process is not Ready/Running.',
+      'Request Equipment failed: Selected vehicle is not waiting or in bay.',
+    ],
+    [
+      'yieldProcess() ignored: Only a Running process on CPU can yield.',
+      'Yield Bay ignored: Only a vehicle currently in the Active Service Bay can yield.',
+    ],
+    [
+      'Voluntarily yielded CPU via yieldProcess() syscall.',
+      'Voluntarily left Active Service Bay to let another vehicle enter.',
+    ],
+  ];
+
+  for (const [osStr, storyStr] of exactReplacements) {
+    if (out === osStr) return storyStr;
+    if (out.includes(osStr)) {
+      out = out.replaceAll(osStr, storyStr);
+    }
+  }
+
+  // Regex rules for dynamic messages across scheduler, kernel, resources, and simulation
+  out = out
+    .replace(
+      /^Trap return to User Mode after ([^.]+)\.$/,
+      (_, callName) =>
+        `Shop Manager finished ${STORY_SYSCALL_NAMES[callName] || callName}; returned control to Shop Floor.`
+    )
+    .replace(
+      /^FCFS selected PID (\d+) \((.+)\) because it arrived first in the Ready Queue \(Arrival: T(\d+)\)\.$/,
+      'FCFS assigned Job #$1 ($2) because it arrived first in the Bay Waiting Line (Check-In: T$3).'
+    )
+    .replace(
+      /^SJF \(Non-Preemptive\) selected PID (\d+) \((.+)\) because it has the shortest remaining CPU burst \((\d+) ticks\) among (\d+) ready process\(es\)\.$/,
+      'SJF (Shortest Service First) assigned Job #$1 ($2) because it has the shortest remaining bay service ($3 ticks) among $4 waiting vehicle(s).'
+    )
+    .replace(
+      /^Round Robin selected PID (\d+) \((.+)\) from the front of the FIFO Ready Queue with time quantum Q=(\d+)\.$/,
+      'Round Robin assigned Job #$1 ($2) from the front of the Bay Waiting Line with a $3-tick bay turn limit.'
+    )
+    .replace(
+      /^Priority Scheduling selected PID (\d+) \((.+)\) because it has the highest priority \(P(\d+)\) among (\d+) ready process\(es\)\.$/,
+      'Priority Scheduling assigned Job #$1 ($2) because it has the highest service priority (P$3) among $4 waiting vehicle(s).'
+    )
+    .replace(
+      /^Continuing PID (\d+) \((.+)\) on CPU under (\w+) \((\d+) CPU ticks remaining\)\.$/,
+      'Continuing service on Job #$1 ($2) in Active Service Bay under $3 ($4 bay ticks remaining).'
+    )
+    .replace(
+      /^Tick (\d+): CPU was idle because no processes were in the Ready Queue\.$/,
+      'Tick $1: Active Service Bay was idle because no vehicles were waiting in the Bay Waiting Line.'
+    )
+    .replace(
+      /^Time quantum Q=(\d+) expired for PID (\d+); /,
+      'Bay turn limit ($1 ticks) ended for Job #$2; '
+    )
+    .replace(
+      /^Round Robin quantum \(Q=(\d+)\) expired; moved to Ready Queue\.$/,
+      'Bay turn limit ($1 ticks) ended; vehicle returned to Bay Waiting Line.'
+    )
+    .replace(
+      /^Quantum expired for PID (\d+) -> preempted to Ready Queue\.$/,
+      'Bay turn ended for Job #$1 -> paused and moved back to Bay Waiting Line.'
+    )
+    .replace(
+      /^Admitted at Tick (\d+)\.$/,
+      'Checked in to Bay Waiting Line at Tick $1.'
+    )
+    .replace(
+      /^PID (\d+) \((.+)\) arrived -> Ready Queue\.$/,
+      'Job #$1 ($2) arrived at shop -> Bay Waiting Line.'
+    )
+    .replace(
+      /^Context Switch #(\d+): PID (\d+) -> PID (\d+)\.$/,
+      'Service Bay Changeover #$1: Job #$2 -> Job #$3.'
+    )
+    .replace(
+      /^Dispatched to CPU \(([^)]+)\)\.$/,
+      'Moved into Active Service Bay ($1).'
+    )
+    .replace(
+      /^Dispatched PID (\d+) \((.+)\) to CPU \(([^)]+)\)\.$/,
+      'Assigned Job #$1 ($2) to Active Service Bay ($3).'
+    )
+    .replace(
+      /^Completed all CPU bursts at Tick (\d+)\.$/,
+      'Finished all bay service work at Tick $1.'
+    )
+    .replace(
+      /^Released equipment mutex -> PID (\d+) moved to Ready Queue\.$/,
+      'Released equipment lock -> Job #$1 moved to Bay Waiting Line.'
+    )
+    .replace(
+      /^PID (\d+) \((.+)\) completed -> Terminated\.$/,
+      'Job #$1 ($2) finished service -> Service Completed.'
+    )
+    .replace(
+      /^Requested equipment I\/O \((\d+) ticks\)\.$/,
+      'Sent to equipment station ($1 ticks).'
+    )
+    .replace(
+      /^PID (\d+) requested I\/O \((\d+)t\) -> Waiting Queue\.$/,
+      'Job #$1 waiting on equipment ($2t) -> Equipment Wait Line.'
+    )
+    .replace(
+      /^Completed I\/O equipment wait at Tick (\d+)\.$/,
+      'Finished equipment service at Tick $1.'
+    )
+    .replace(
+      /^PID (\d+) finished I\/O wait -> returned to Ready Queue\.$/,
+      'Job #$1 finished equipment wait -> returned to Bay Waiting Line.'
+    )
+    .replace(
+      /^PID (\d+) already holds (.+)\.$/,
+      'Job #$1 is already using $2.'
+    )
+    .replace(
+      /^PID (\d+) locked mutex on (.+)\.$/,
+      'Job #$1 reserved $2 (Equipment Lock).'
+    )
+    .replace(
+      /^Waiting for mutex lock on (.+) \(held by PID (\d+)\)\.$/,
+      'Waiting for $1 lock (in use by Job #$2).'
+    )
+    .replace(
+      /^Mutex busy: PID (\d+) added to (.+) waiting queue \(owner: PID (\d+)\)\.$/,
+      'Equipment busy: Job #$1 added to $2 wait line (used by Job #$3).'
+    )
+    .replace(
+      /^Acquired released mutex on (.+); returned to Ready Queue\.$/,
+      'Acquired freed $1 lock; returned to Bay Waiting Line.'
+    )
+    .replace(
+      /^DEADLOCK DETECTED: PID (\d+) holds (.+) and waits for (.+), while PID (\d+) holds (.+) and waits for (.+)\.$/,
+      'SHOP GRIDLOCK DETECTED: Job #$1 holds $2 and waits for $3, while Job #$4 holds $5 and waits for $6.'
+    )
+    .replace(
+      /^createProcess\(\) -> Created PID (\d+) \((.+), ([^,]+), (\d+) threads\)\.$/,
+      'Check-In -> Registered Job #$1 ($2, $3, $4 mechanic tasks).'
+    )
+    .replace(
+      /^createProcess\(\) -> Parent PID (\d+) spawned Child PID (\d+) \((\d+) threads\)\.$/,
+      'Sub-Job Created -> Parent Job #$1 spawned Child Job #$2 ($3 mechanic tasks).'
+    )
+    .replace(
+      /^Mutex released -> PID (\d+) moved to Ready Queue\.$/,
+      'Equipment freed -> Job #$1 moved to Bay Waiting Line.'
+    )
+    .replace(
+      /^terminateProcess\(PID (\d+)\) -> Process halted\.$/,
+      'Cancel Job (Job #$1) -> Vehicle service halted.'
+    )
+    .replace(
+      /^terminateProcess\(PID (\d+)\) -> Ignored \(process already terminated or missing\)\.$/,
+      'Cancel Job (Job #$1) -> Ignored (already completed or missing).'
+    )
+    .replace(
+      /^updateProcess\(PID (\d+)\) -> Ignored \(process is terminated or missing\)\.$/,
+      'Update Order (Job #$1) -> Ignored (already completed or missing).'
+    )
+    .replace(
+      /^updateProcess\(PID (\d+)\) -> Updated "(.+)" \(([^,]+), P(\d+), CPU:(\d+)t, I\/O:(\d+)t\)\.$/,
+      'Update Order (Job #$1) -> Updated "$2" ($3, P$4, Bay:$5t, Equip:$6t).'
+    )
+    .replace(
+      /^deleteProcess\(PID (\d+)\) -> Removed "(.+)" from PCB table\.$/,
+      'Delete Record (Job #$1) -> Removed "$2" from vehicle records.'
+    )
+    .replace(
+      /^deleteProcess\(PID (\d+)\) -> Ignored \(process not found\)\.$/,
+      'Delete Record (Job #$1) -> Ignored (vehicle job not found).'
+    )
+    .replace(
+      /^createThread\(PID (\d+)\) -> Spawned TID (\d+) \((.+)\)\.$/,
+      'Add Mechanic Task (Job #$1) -> Added Task #$2 ($3).'
+    )
+    .replace(
+      /^joinThread\(\) -> No active threads remaining on PID ([^.]+)\.$/,
+      'Finish Task -> No active mechanic tasks remaining on Job #$1.'
+    )
+    .replace(
+      /^joinThread\(PID (\d+), TID (\d+)\) -> Joined "(.+)"\.$/,
+      'Finish Task (Job #$1, Task #$2) -> Completed "$3".'
+    )
+    .replace(
+      /^Syscall requestIO\(\) blocked process for (\d+) ticks\.$/,
+      'Shop request moved vehicle to equipment station for $1 ticks.'
+    )
+    .replace(
+      /^requestIO\(PID (\d+)\) -> Moved to Waiting Queue \((\d+)t I\/O\)\.$/,
+      'Request Equipment (Job #$1) -> Moved to Equipment Wait Line ($2t).'
+    )
+    .replace(
+      /^yieldProcess\(PID (\d+)\) -> Released CPU back to Ready Queue\.$/,
+      'Yield Bay (Job #$1) -> Released Service Bay and returned to Bay Waiting Line.'
+    )
+    .replace(
+      /^Simulation started \(([^,]+), (\d+)ms\/tick\)\.$/,
+      'Shift simulation started ($1, $2ms/tick).'
+    )
+    .replace(
+      /^Loaded "([^"]+)" preset \((\d+) processes\)\.$/,
+      'Loaded "$1" shop preset ($2 vehicle jobs).'
+    )
+    .replace(
+      /^Simulation reset: restored queues, timers, and Gantt chart \((\d+) process records preserved\)\.$/,
+      'Shift reset: restored bay queues, timers, and timeline ($1 vehicle records preserved).'
+    )
+    .replace(
+      /^Rush Hour activated: spawned (\d+) predefined processes \((.+)\)\.$/,
+      (_, count, list) =>
+        `Rush Hour activated: ${count} predefined vehicles arrived (${list.replaceAll('PID ', 'Job #')}).`
+    )
+    .replace(
+      /^Deadlock resolved: Terminated PID (\d+), freeing (.+) for remaining process\.$/,
+      'Gridlock cleared: Cancelled Job #$1, freeing $2 for the remaining vehicle.'
+    )
+    .replace(
+      /^Time Machine: Resumed live simulation from Tick (\d+)\.$/,
+      'Shift Replay: Resumed live shop shift from Tick $1.'
+    )
+    .replace(
+      /^Moved from (\w+) to (\w+)\.$/,
+      (_, fromState, toState) =>
+        `Moved from ${STORY_STATE_LABELS[fromState] || fromState} to ${STORY_STATE_LABELS[toState] || toState}.`
+    );
+
+  // Clean fallback replacements for any residual OS tokens
+  out = out
+    .replace(/\bPID\s+(\d+)\b/g, 'Job #$1')
+    .replace(/\bTID\s+(\d+)\b/g, 'Task #$1')
+    .replace(/\bReady Queue\b/g, 'Bay Waiting Line')
+    .replace(/\bWaiting Queue\b/g, 'Equipment Wait Line')
+    .replace(/\bContext Switch\b/g, 'Service Bay Changeover')
+    .replace(/\bDeadlock\b/g, 'Gridlock')
+    .replace(/\bCPU\b/g, 'Active Service Bay')
+    .replace(/\bmutex(es)?\b/gi, (_, plural) => (plural ? 'equipment locks' : 'equipment lock'));
+
+  return out;
+}
+
+function formatDualText(text) {
+  if (currentViewMode === 'story') {
+    return toStoryText(text);
+  }
+  return text;
 }
 
 // Cached DOM references
@@ -292,6 +678,18 @@ function applyDualViewLabels() {
   });
   dom.dualViewToggle.textContent =
     currentViewMode === 'story' ? 'View: Story Mode' : 'View: OS Mode';
+  dom.kernelModeIndicator.title =
+    currentViewMode === 'story'
+      ? 'Current Workshop Role (Shop Floor / Shop Manager)'
+      : 'Current CPU Privilege Mode (User Mode / Kernel Mode)';
+  dom.btnRushHour.title =
+    currentViewMode === 'story'
+      ? 'Spawn 2–4 predefined vehicle service jobs'
+      : 'Spawn 2–4 predefined burst processes';
+  const isKernelFlash = dom.kernelModeIndicator.classList.contains('is-kernel');
+  dom.modeValueText.textContent = formatModeLabel(
+    isKernelFlash ? CPU_MODES.KERNEL : getKernelMode()
+  );
 }
 
 function updatePlaybackButtons() {
@@ -340,8 +738,9 @@ function renderSummaryAndMetrics() {
   dom.metricAvgTurnaround.textContent = `${metrics.avgTurnaround.toFixed(2)} t`;
   dom.metricAvgResponse.textContent = `${metrics.avgResponse.toFixed(2)} t`;
   dom.metricUtilization.textContent = `${metrics.cpuUtilization.toFixed(1)}%`;
-  const unitPlural = currentViewMode === 'story' ? 'jobs' : 'processes';
-  dom.metricsBreakdownNote.textContent = `Completed: ${metrics.completedCount} / ${metrics.totalCount} ${unitPlural} · Busy: ${metrics.busyTicks} / ${metrics.currentTick} ticks · Throughput: ${metrics.throughput.toFixed(2)} ${unitPlural}/tick`;
+  const unitPlural = currentViewMode === 'story' ? 'vehicles' : 'processes';
+  const busyWord = currentViewMode === 'story' ? 'Bay Busy' : 'Busy';
+  dom.metricsBreakdownNote.textContent = `Completed: ${metrics.completedCount} / ${metrics.totalCount} ${unitPlural} · ${busyWord}: ${metrics.busyTicks} / ${metrics.currentTick} ticks · Throughput: ${metrics.throughput.toFixed(2)} ${unitPlural}/tick`;
 }
 
 function renderQueuesAndBay() {
@@ -349,12 +748,13 @@ function renderQueuesAndBay() {
   const running = schedState.runningPid ? getProcessByPid(schedState.runningPid) : null;
   const ready = schedState.readyQueue.map((pid) => getProcessByPid(pid)).filter(Boolean);
   const waiting = getAllProcesses().filter((p) => p.state === PROCESS_STATES.WAITING);
+  const remLabel = currentViewMode === 'story' ? 'Remaining Bay Service' : 'Remaining CPU';
 
   if (running) {
     dom.activeBayCard.className = 'bay-active-card';
     dom.activeBayCard.innerHTML = `
       <strong>${formatId(running.pid)}: ${escapeHtml(running.name)}</strong>
-      <span class="muted-note">${escapeHtml(running.serviceType)} · Remaining CPU: ${running.remainingTime}t · Priority P${running.priority}</span>
+      <span class="muted-note">${escapeHtml(running.serviceType)} · ${remLabel}: ${running.remainingTime}t · Priority P${running.priority}</span>
     `;
   } else {
     dom.activeBayCard.className = 'bay-empty';
@@ -372,7 +772,9 @@ function renderQueuesAndBay() {
               `<div class="queue-item tabular">${formatId(p.pid)} · ${escapeHtml(p.name)} (Rem ${p.remainingTime}t · P${p.priority})</div>`
           )
           .join('')
-      : '<span class="empty-hint">Queue empty</span>';
+      : `<span class="empty-hint">${
+          currentViewMode === 'story' ? 'Waiting line empty' : 'Ready queue empty'
+        }</span>`;
 
   dom.waitingQueueList.innerHTML =
     waiting.length > 0
@@ -424,17 +826,25 @@ function renderGanttChart() {
   }
 
   if (ganttHistory.length === 0) {
-    dom.ganttChart.innerHTML =
-      '<div class="empty-hint">Start or step the simulation to record timeline ticks.</div>';
-    dom.whyDecisionSelect.innerHTML = '<option value="">No decisions yet</option>';
+    const emptyChartText =
+      currentViewMode === 'story'
+        ? 'Start or step the shift simulation to record bay timeline ticks.'
+        : 'Start or step the simulation to record Gantt ticks.';
+    const emptySelectText =
+      currentViewMode === 'story' ? 'No assignments yet' : 'No decisions yet';
+    dom.ganttChart.innerHTML = `<div class="empty-hint">${emptyChartText}</div>`;
+    dom.whyDecisionSelect.innerHTML = `<option value="">${emptySelectText}</option>`;
     dom.whyDecisionSelect.disabled = true;
     dom.btnWhyJumpTick.disabled = true;
     dom.whyExplainerText.textContent =
       currentViewMode === 'story'
-        ? 'Select a block in the Gantt chart above to view why the scheduler picked that vehicle service job at that tick.'
+        ? 'Select a block in the bay timeline above to view why the shop assigned that vehicle service job at that tick.'
         : 'Select a block in the Gantt chart above to view why the scheduler dispatched that process at that tick.';
     return;
   }
+
+  const csBadgeTitle =
+    currentViewMode === 'story' ? 'Service Bay Changeover' : 'Context Switch';
 
   dom.ganttChart.innerHTML = ganttHistory
     .map((entry) => {
@@ -443,7 +853,7 @@ function renderGanttChart() {
       const pidLabel = isIdle ? 'IDLE' : formatId(entry.pid);
       const color = getPidColor(entry.pid);
       const csDivider = entry.contextSwitch
-        ? '<span class="gantt-cs-divider" title="Context Switch / Service Bay Changeover">CS</span>'
+        ? `<span class="gantt-cs-divider" title="${csBadgeTitle}">CS</span>`
         : '';
 
       return `${csDivider}
@@ -452,7 +862,7 @@ function renderGanttChart() {
           class="gantt-block ${isIdle ? 'is-idle' : ''} ${isSelected ? 'is-selected' : ''}"
           style="--pid-color: ${color};"
           data-tick="${entry.tick}"
-          title="${escapeHtml(entry.reason)}"
+          title="${escapeHtml(formatDualText(entry.reason))}"
         >
           <span class="gantt-pid tabular">${pidLabel}</span>
           <span class="gantt-time tabular">T${entry.tick}-${entry.tick + 1}</span>
@@ -483,8 +893,12 @@ function renderGanttChart() {
 
   const picked = ganttHistory.find((item) => item.tick === selectedGanttTick);
   if (picked) {
-    const csNote = picked.contextSwitch ? ' · Context Switch' : '';
-    dom.whyExplainerText.textContent = `[Tick ${picked.tick} · ${picked.algorithm}${csNote}] ${picked.reason}`;
+    const csNote = picked.contextSwitch
+      ? currentViewMode === 'story'
+        ? ' · Service Bay Changeover'
+        : ' · Context Switch'
+      : '';
+    dom.whyExplainerText.textContent = `[Tick ${picked.tick} · ${picked.algorithm}${csNote}] ${formatDualText(picked.reason)}`;
   }
 }
 
@@ -492,18 +906,23 @@ function renderPcbTable() {
   const processes = getAllProcesses();
   const selectedPid = getSelectedPid();
   const replaying = getTimeMachineInfo().isReplaying;
+  const noSelectionText =
+    currentViewMode === 'story' ? 'No vehicle selected' : 'No process selected';
 
   if (processes.length === 0) {
-    dom.pcbTableBody.innerHTML =
-      '<tr><td colspan="10" class="empty-cell">No vehicle service jobs loaded.</td></tr>';
-    dom.selectedProcessLabel.textContent = 'No job selected';
+    const emptyRowText =
+      currentViewMode === 'story'
+        ? 'No vehicle service jobs loaded.'
+        : 'No processes loaded.';
+    dom.pcbTableBody.innerHTML = `<tr><td colspan="10" class="empty-cell">${emptyRowText}</td></tr>`;
+    dom.selectedProcessLabel.textContent = noSelectionText;
     return;
   }
 
   const selectedPcb = getProcessByPid(selectedPid);
   dom.selectedProcessLabel.textContent = selectedPcb
     ? `${formatId(selectedPcb.pid)} (${selectedPcb.name})`
-    : 'No job selected';
+    : noSelectionText;
 
   dom.pcbTableBody.innerHTML = processes
     .map((pcb) => {
@@ -675,7 +1094,7 @@ function openPcbModal(pid) {
       return `
       <div class="history-item">
         <span class="tabular text-orange">[T${item.tick}]</span>
-        <span>${escapeHtml(fromText)} &rarr; <strong>${escapeHtml(toText)}</strong>: ${escapeHtml(item.reason)}</span>
+        <span>${escapeHtml(fromText)} &rarr; <strong>${escapeHtml(toText)}</strong>: ${escapeHtml(formatDualText(item.reason))}</span>
       </div>`;
     })
     .join('');
@@ -685,10 +1104,10 @@ function openPcbModal(pid) {
     <div class="pcb-kv"><span>${isStory ? 'Shop Status' : 'Current State'}</span><strong class="${getStateClass(pcb.state)}">${escapeHtml(formatStateLabel(pcb.state))}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Vehicle Job' : 'Process Name'}</span><strong>${escapeHtml(pcb.name)}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Service Type' : 'Workload Type'}</span><strong>${escapeHtml(pcb.serviceType)}</strong></div>
-    <div class="pcb-kv"><span>Priority / Arrival</span><strong class="tabular">P${pcb.priority} / Tick ${pcb.arrivalTime}</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Priority / Check-In' : 'Priority / Arrival'}</span><strong class="tabular">P${pcb.priority} / Tick ${pcb.arrivalTime}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Bay / Equip Remaining' : 'CPU / I/O Remaining'}</span><strong class="tabular">${pcb.remainingTime}t / ${pcb.ioRemaining}t</strong></div>
-    <div class="pcb-kv"><span>Wait / Turnaround</span><strong class="tabular">${pcb.waitingTime}t / ${pcb.completionTime !== null ? pcb.completionTime - pcb.arrivalTime : '-'}t</strong></div>
-    <div class="pcb-kv"><span>Response Time</span><strong class="tabular">${pcb.startTime !== null ? pcb.startTime - pcb.arrivalTime : '-'}t</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Queue Wait / Shop Turnaround' : 'Wait / Turnaround'}</span><strong class="tabular">${pcb.waitingTime}t / ${pcb.completionTime !== null ? pcb.completionTime - pcb.arrivalTime : '-'}t</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Bay Response Time' : 'Response Time'}</span><strong class="tabular">${pcb.startTime !== null ? pcb.startTime - pcb.arrivalTime : '-'}t</strong></div>
     <div class="pcb-kv pcb-kv-full">
       <span>${isStory ? 'Mechanic Clipboard (Simulated Registers)' : 'Simulated Registers'}</span>
       <strong class="tabular">PC: ${pcb.registers.PC} · ACC: ${pcb.registers.ACC} · IR: ${pcb.registers.IR} · SP: ${pcb.registers.SP}</strong>
@@ -719,8 +1138,9 @@ function renderKernelLog() {
   const logs = getKernelLogs();
 
   if (logs.length === 0) {
-    dom.kernelLogList.innerHTML =
-      '<div class="log-entry"><span class="log-text muted-note">Kernel log cleared.</span></div>';
+    const emptyLogText =
+      currentViewMode === 'story' ? 'Operations log cleared.' : 'Kernel log cleared.';
+    dom.kernelLogList.innerHTML = `<div class="log-entry"><span class="log-text muted-note">${emptyLogText}</span></div>`;
     return;
   }
 
@@ -729,7 +1149,7 @@ function renderKernelLog() {
       (entry) => `
       <div class="log-entry">
         <span class="log-tick tabular">[T${entry.tick}]</span>
-        <span class="log-text"><strong>${escapeHtml(entry.source)}:</strong> ${escapeHtml(entry.message)}</span>
+        <span class="log-text"><strong>${escapeHtml(formatLogSource(entry.source))}:</strong> ${escapeHtml(formatDualText(entry.message))}</span>
       </div>`
     )
     .join('');
@@ -739,7 +1159,7 @@ function renderKernelLog() {
 
 function flashKernelMode() {
   dom.kernelModeIndicator.classList.add('is-kernel');
-  dom.modeValueText.textContent = CPU_MODES.KERNEL;
+  dom.modeValueText.textContent = formatModeLabel(CPU_MODES.KERNEL);
 
   if (kernelFlashTimer !== null) {
     clearTimeout(kernelFlashTimer);
@@ -747,7 +1167,7 @@ function flashKernelMode() {
 
   kernelFlashTimer = setTimeout(() => {
     dom.kernelModeIndicator.classList.remove('is-kernel');
-    dom.modeValueText.textContent = getKernelMode();
+    dom.modeValueText.textContent = formatModeLabel(getKernelMode());
     kernelFlashTimer = null;
   }, 450);
 }
@@ -792,10 +1212,11 @@ function renderThreadsPanel() {
   if (!selectedPcb) {
     dom.sharedResourcesText.textContent =
       currentViewMode === 'story'
-        ? 'Select a vehicle record from the table to inspect shared work-order resources and individual mechanic task clipboards.'
+        ? 'Select a vehicle record from the table to inspect shared work-order workspace details and individual mechanic task clipboards.'
         : 'Select a process row from the PCB table to inspect shared process memory and individual thread private registers.';
-    dom.tcbTableBody.innerHTML =
-      '<tr><td colspan="4" class="empty-cell">No threads to display.</td></tr>';
+    const emptyThreadsText =
+      currentViewMode === 'story' ? 'No mechanic tasks to display.' : 'No threads to display.';
+    dom.tcbTableBody.innerHTML = `<tr><td colspan="4" class="empty-cell">${emptyThreadsText}</td></tr>`;
     return;
   }
 
@@ -806,13 +1227,14 @@ function renderThreadsPanel() {
     `;
   } else {
     dom.sharedResourcesText.innerHTML = `
-      <strong>Shared:</strong> ${escapeHtml(shared.workOrder)} · Memory <span class="tabular">${shared.memorySpace}</span> · Mutexes: ${escapeHtml(shared.equipmentLocks)}
+      <strong>Shared:</strong> Process PID ${selectedPcb.pid} (${escapeHtml(selectedPcb.name)}) · Memory <span class="tabular">${shared.memorySpace}</span> · Mutexes: ${escapeHtml(shared.equipmentLocks)}
     `;
   }
 
   if (!selectedPcb.threads || selectedPcb.threads.length === 0) {
-    dom.tcbTableBody.innerHTML =
-      '<tr><td colspan="4" class="empty-cell">No threads initialized.</td></tr>';
+    const emptyInitText =
+      currentViewMode === 'story' ? 'No mechanic tasks initialized.' : 'No threads initialized.';
+    dom.tcbTableBody.innerHTML = `<tr><td colspan="4" class="empty-cell">${emptyInitText}</td></tr>`;
     return;
   }
 
@@ -839,13 +1261,15 @@ function renderResourcesPanel() {
   const replaying = getTimeMachineInfo().isReplaying;
 
   if (deadlock.detected) {
-    dom.deadlockStatusLabel.textContent = 'Status: DEADLOCK';
+    dom.deadlockStatusLabel.textContent =
+      currentViewMode === 'story' ? 'Status: GRIDLOCK' : 'Status: DEADLOCK';
     dom.deadlockStatusLabel.className = 'panel-meta text-red';
     dom.deadlockPanel.classList.add('is-deadlocked');
-    dom.deadlockExplanation.textContent = deadlock.message;
+    dom.deadlockExplanation.textContent = formatDualText(deadlock.message);
     dom.btnResolveDeadlock.disabled = replaying;
   } else {
-    dom.deadlockStatusLabel.textContent = 'Status: Normal';
+    dom.deadlockStatusLabel.textContent =
+      currentViewMode === 'story' ? 'Status: Shop Clear' : 'Status: Normal';
     dom.deadlockStatusLabel.className = 'panel-meta text-green';
     dom.deadlockPanel.classList.remove('is-deadlocked');
     dom.deadlockExplanation.textContent =
@@ -887,7 +1311,12 @@ function renderResourcesPanel() {
 
 function renderTimeMachine() {
   const tm = getTimeMachineInfo();
-  dom.snapshotCountLabel.textContent = `${tm.count} snapshot${tm.count === 1 ? '' : 's'}`;
+  const snapWord = currentViewMode === 'story' ? 'checkpoint' : 'snapshot';
+  dom.snapshotCountLabel.textContent = `${tm.count} ${snapWord}${tm.count === 1 ? '' : 's'}`;
+  const liveText =
+    currentViewMode === 'story'
+      ? `Viewing live shop floor (Tick ${tm.currentSnapshotTick})`
+      : `Viewing live state (Tick ${tm.currentSnapshotTick})`;
 
   if (tm.count <= 1) {
     dom.tmSlider.min = '0';
@@ -897,7 +1326,7 @@ function renderTimeMachine() {
     dom.btnTmPrev.disabled = true;
     dom.btnTmNext.disabled = true;
     dom.btnTmResume.disabled = true;
-    dom.tmStatusText.textContent = `Viewing live state (Tick ${tm.currentSnapshotTick})`;
+    dom.tmStatusText.textContent = liveText;
     dom.tmStatusText.className = 'muted-note';
     return;
   }
@@ -912,10 +1341,14 @@ function renderTimeMachine() {
   dom.btnTmResume.disabled = !tm.isReplaying;
 
   if (tm.isReplaying) {
-    dom.tmStatusText.textContent = `Replay Mode: ${tm.currentLabel} (click Resume Here to branch)`;
+    const labelText =
+      currentViewMode === 'story'
+        ? tm.currentLabel.replace('Deadlock', 'Gridlock')
+        : tm.currentLabel;
+    dom.tmStatusText.textContent = `Replay Mode: ${labelText} (click Resume Here to branch)`;
     dom.tmStatusText.className = 'muted-note text-orange';
   } else {
-    dom.tmStatusText.textContent = `Viewing live state (Tick ${tm.currentSnapshotTick})`;
+    dom.tmStatusText.textContent = liveText;
     dom.tmStatusText.className = 'muted-note';
   }
 }
@@ -1171,7 +1604,9 @@ function bindEvents() {
     const targetPid = getSelectedPid() ?? schedState.runningPid;
 
     if (syscall === 'createThread') {
-      sysCreateThread(targetPid, 'Extra Tire Balance Check', schedState.currentTick);
+      const threadName =
+        currentViewMode === 'story' ? 'Extra Tire Balance Check' : 'Auxiliary Worker Thread';
+      sysCreateThread(targetPid, threadName, schedState.currentTick);
     } else if (syscall === 'joinThread') {
       sysJoinThread(targetPid, null, schedState.currentTick);
     } else if (syscall === 'requestIO') {
