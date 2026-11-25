@@ -9,6 +9,7 @@ import {
   getAllProcesses,
   importProcessState,
   resetProcesses,
+  resetProcessesForReplay,
   setSelectedPid,
 } from './processes.js';
 import {
@@ -34,6 +35,7 @@ import {
   importThreadState,
   initializeProcessThreads,
   resetThreadCounter,
+  resetThreadsForReplay,
   syncThreadsWithProcesses,
 } from './threads.js';
 import {
@@ -67,7 +69,7 @@ export const WORKLOAD_PRESETS = {
     {
       name: 'Hatchback Wigo - Safety Check',
       serviceType: 'Tire Inspection',
-      priority: 3,
+      priority: 4,
       arrivalTime: 1,
       cpuBurst: 3,
       ioBurst: 0,
@@ -75,7 +77,7 @@ export const WORKLOAD_PRESETS = {
     {
       name: 'Pickup Hilux - Rear Axle',
       serviceType: 'Tire Replacement',
-      priority: 2,
+      priority: 3,
       arrivalTime: 2,
       cpuBurst: 5,
       ioBurst: 1,
@@ -121,7 +123,7 @@ export const WORKLOAD_PRESETS = {
       serviceType: 'Tire Inspection',
       priority: 1,
       arrivalTime: 0,
-      cpuBurst: 3,
+      cpuBurst: 2,
       ioBurst: 5,
     },
     {
@@ -130,10 +132,78 @@ export const WORKLOAD_PRESETS = {
       priority: 3,
       arrivalTime: 1,
       cpuBurst: 4,
-      ioBurst: 4,
+      ioBurst: 3,
     },
   ],
 };
+
+// Predefined Rush Hour vehicle templates with fixed attributes
+export const RUSH_HOUR_TEMPLATES = [
+  {
+    name: 'Hatchback Jazz - Express Patch',
+    serviceType: 'Tire Inspection',
+    priority: 1,
+    arrivalTime: 0,
+    cpuBurst: 3,
+    ioBurst: 1,
+  },
+  {
+    name: 'Pickup Ranger - Mud-Terrain Mount',
+    serviceType: 'Tire Replacement',
+    priority: 2,
+    arrivalTime: 0,
+    cpuBurst: 6,
+    ioBurst: 2,
+  },
+  {
+    name: 'MPV Innova - 4-Wheel Balance',
+    serviceType: 'Wheel Balancing',
+    priority: 2,
+    arrivalTime: 1,
+    cpuBurst: 4,
+    ioBurst: 2,
+  },
+  {
+    name: 'Sedan Accord - Front Tire Swap',
+    serviceType: 'Tire Replacement',
+    priority: 3,
+    arrivalTime: 1,
+    cpuBurst: 5,
+    ioBurst: 2,
+  },
+  {
+    name: 'Van Hiace - Fleet Safety Check',
+    serviceType: 'Tire Inspection',
+    priority: 1,
+    arrivalTime: 0,
+    cpuBurst: 4,
+    ioBurst: 1,
+  },
+  {
+    name: 'SUV Everest - High-Speed Balance',
+    serviceType: 'Wheel Balancing',
+    priority: 2,
+    arrivalTime: 2,
+    cpuBurst: 5,
+    ioBurst: 1,
+  },
+  {
+    name: 'Coupe BRZ - Performance Mount',
+    serviceType: 'Tire Replacement',
+    priority: 1,
+    arrivalTime: 1,
+    cpuBurst: 4,
+    ioBurst: 2,
+  },
+  {
+    name: 'Compact Mirage - Valve & Pressure',
+    serviceType: 'Tire Inspection',
+    priority: 4,
+    arrivalTime: 2,
+    cpuBurst: 2,
+    ioBurst: 1,
+  },
+];
 
 // Time Machine state: array of tick snapshots
 let snapshots = [];
@@ -268,6 +338,71 @@ export function resetSimulation(presetKey = 'balanced') {
   snapshots = [];
   viewIndex = -1;
   captureSnapshot('Tick 0 (Initial)');
+}
+
+/**
+ * Resets scheduler, timers, queues, metrics, resources, and Gantt chart
+ * while preserving all existing default and Rush Hour process records.
+ */
+export function resetSimulationPreservingProcesses() {
+  resetProcessesForReplay();
+  resetThreadsForReplay();
+  resetResources();
+  resetScheduler();
+  resetKernel();
+
+  const totalCount = getAllProcesses().length;
+  logKernelEvent(
+    0,
+    `Simulation reset: restored queues, timers, and Gantt chart (${totalCount} process records preserved).`,
+    'BOOT'
+  );
+
+  snapshots = [];
+  viewIndex = -1;
+  captureSnapshot('Tick 0 (Reset)');
+}
+
+/**
+ * Rush Hour Feature: randomly selects 2-4 predefined vehicle templates
+ * with fixed attributes and spawns them with unique PIDs.
+ */
+export function triggerRushHour() {
+  if (getTimeMachineInfo().isReplaying) return [];
+
+  const count = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4 jobs
+  const existingNames = new Set(getAllProcesses().map((p) => p.name));
+  const unseen = RUSH_HOUR_TEMPLATES.filter((t) => !existingNames.has(t.name));
+  const pool = [...(unseen.length >= count ? unseen : RUSH_HOUR_TEMPLATES)];
+
+  // Fisher-Yates shuffle on template selection only (numeric values stay fixed)
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  const chosenTemplates = pool.slice(0, count);
+  const currentTick = getSchedulerState().currentTick;
+  const created = [];
+
+  for (const template of chosenTemplates) {
+    const pcb = sysCreateProcess({ ...template }, currentTick);
+    created.push(pcb);
+  }
+
+  if (created.length > 0) {
+    setSelectedPid(created[0].pid);
+    logKernelEvent(
+      currentTick,
+      `Rush Hour activated: spawned ${created.length} predefined jobs (${created
+        .map((p) => `PID ${p.pid}`)
+        .join(', ')}).`,
+      'RUSHHOUR'
+    );
+    syncLiveSnapshot();
+  }
+
+  return created;
 }
 
 /**
