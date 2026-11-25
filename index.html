@@ -581,8 +581,9 @@
           <section class="guide-section">
             <h3 class="guide-heading">Story Mode vs. OS Mode Terminology</h3>
             <p class="muted-note">
-              Both views run the exact same live operating system simulation. Use the
-              <strong>View: Story Mode / OS Mode</strong> button in the header to switch labels anytime.
+              Both views run the exact same live simulation. Clicking
+              <strong>View: Story Mode / OS Mode</strong> switches every label, "Why?" explanation,
+              log entry, lifecycle history, and status message between the PitStop workshop and pure OS views.
             </p>
             <div class="table-wrap">
               <table class="data-table data-table-compact">
@@ -595,29 +596,44 @@
                 </thead>
                 <tbody>
                   <tr>
+                    <td>Shop Floor / Shop Manager</td>
+                    <td>User Mode / Kernel Mode</td>
+                    <td>Normal execution vs. privileged manager/kernel actions</td>
+                  </tr>
+                  <tr>
                     <td>Shop Operations Manager</td>
                     <td>OS Kernel</td>
-                    <td>Manages jobs, queues, syscalls, and hardware locks</td>
+                    <td>Manages jobs, waiting lines, requests, and equipment locks</td>
                   </tr>
                   <tr>
                     <td>Active Service Bay</td>
                     <td>CPU</td>
-                    <td>Executes 1 active process/job per simulation tick</td>
+                    <td>Executes 1 active job/process per simulation tick</td>
                   </tr>
                   <tr>
-                    <td>Vehicle Service Job</td>
-                    <td>Process</td>
+                    <td>Vehicle Service Job (Job #)</td>
+                    <td>Process (PID)</td>
                     <td>An independent work order with its own ID &amp; burst</td>
                   </tr>
                   <tr>
                     <td>Vehicle Service Record</td>
                     <td>PCB (Process Control Block)</td>
-                    <td>Stores ID, parent, state, priority, registers &amp; metrics</td>
+                    <td>Stores ID, parent, status, priority, clipboard/registers &amp; history</td>
                   </tr>
                   <tr>
-                    <td>Mechanic Service Task</td>
-                    <td>Thread (TCB)</td>
-                    <td>Sub-tasks sharing the job's memory/work order</td>
+                    <td>Mechanic Service Task (Task #)</td>
+                    <td>Thread (TCB / TID)</td>
+                    <td>Sub-tasks sharing the job's workspace/memory</td>
+                  </tr>
+                  <tr>
+                    <td>Bay Waiting Line / Equipment Wait Line</td>
+                    <td>Ready Queue / Waiting Queue</td>
+                    <td>Waiting lines for service bay dispatch or equipment/I/O</td>
+                  </tr>
+                  <tr>
+                    <td>Bay Turn</td>
+                    <td>Time Quantum (Q)</td>
+                    <td>Max ticks per turn under Round Robin before rotation</td>
                   </tr>
                   <tr>
                     <td>Equipment Lock</td>
@@ -627,10 +643,25 @@
                   <tr>
                     <td>Service Bay Changeover</td>
                     <td>Context Switch (CS)</td>
-                    <td>Switching the CPU/bay from one job to another</td>
+                    <td>Switching the bay/CPU from one vehicle/process to another</td>
                   </tr>
                   <tr>
-                    <td>Checked In / Waiting for Service / Undergoing Service / Waiting for Equipment / Completed</td>
+                    <td>Shop Gridlock</td>
+                    <td>Deadlock</td>
+                    <td>2-job circular wait between Tire Changer &amp; Wheel Balancer</td>
+                  </tr>
+                  <tr>
+                    <td>Rush Hour</td>
+                    <td>Burst Workload</td>
+                    <td>Adds 2–4 predefined fixed-attribute jobs/processes</td>
+                  </tr>
+                  <tr>
+                    <td>Shift Replay (Checkpoints)</td>
+                    <td>Time Machine (Snapshots)</td>
+                    <td>Tick-by-tick state history scrubbing and branching</td>
+                  </tr>
+                  <tr>
+                    <td>Checked In / Waiting for Service / Undergoing Tire Service / Waiting for Equipment / Service Completed</td>
                     <td>New / Ready / Running / Waiting / Terminated</td>
                     <td>5-State Process Lifecycle</td>
                   </tr>
@@ -642,10 +673,11 @@
           <section class="guide-section">
             <h3 class="guide-heading">Quick Controls &amp; Standout Features</h3>
             <ul class="guide-list">
-              <li><strong>Playback &amp; Scheduling:</strong> Use <strong>Start</strong>, <strong>Pause</strong>, or <strong>Step (+1 Tick)</strong> and compare <strong>FCFS</strong>, <strong>SJF</strong>, <strong>Round Robin</strong> (with configurable Quantum), and <strong>Priority</strong> across 3 shop presets.</li>
-              <li><strong>Process CRUD &amp; Hierarchy:</strong> Click <strong>+ Add Vehicle Job / + Add Process</strong> to create jobs, <strong>Edit</strong> to modify bursts/priority/name, <strong>+ Child</strong> to spawn a linked PPID sub-job, <strong>Terminate</strong> to halt execution, or <strong>Delete</strong> to remove a record.</li>
-              <li><strong>"Why?" Explainer &amp; Time Machine:</strong> Click any Gantt block to see why that job was chosen at that tick, jump to its snapshot, scrub past ticks, or click <strong>Resume Here</strong> to branch.</li>
-              <li><strong>Deadlock Demo &amp; Syscalls:</strong> Trigger a 2-job circular wait on the Tire Changer &amp; Wheel Balancer and resolve it, or test manual <code>createThread()</code>, <code>joinThread()</code>, <code>requestIO()</code>, and <code>yieldProcess()</code> traps.</li>
+              <li><strong>Playback, Presets &amp; Rush Hour:</strong> Use <strong>Start</strong>, <strong>Pause</strong>, or <strong>Step (+1 Tick)</strong> to compare <strong>FCFS</strong>, <strong>SJF</strong>, <strong>Round Robin</strong> (using <strong>Bay Turn / Quantum</strong>), and <strong>Priority</strong> across 3 presets. Click <strong>Rush Hour / Burst Workload</strong> to spawn 2–4 predefined vehicles/processes with fixed attributes and unique IDs.</li>
+              <li><strong>Reset vs. Load Preset:</strong> Click <strong>Reset</strong> to restore timers, queues, metrics, locks, and the timeline back to Tick 0 while preserving all default and Rush Hour records. Click <strong>Load</strong> to reload the selected preset from scratch.</li>
+              <li><strong>Full Record CRUD &amp; Hierarchy:</strong> Click <strong>+ Add Vehicle Job / + Add Process</strong> to create entries, <strong>Edit</strong> to modify bursts, priority, or check-in/arrival time, <strong>+ Child</strong> to spawn a linked sub-job/child process, <strong>Terminate</strong> to halt it, or <strong>Delete</strong> to remove it.</li>
+              <li><strong>"Why?" Explainer &amp; Shift Replay / Time Machine:</strong> Click any timeline/Gantt block to inspect why that job/process was dispatched at that tick, jump straight to its checkpoint/snapshot, scrub past ticks, or click <strong>Resume Here</strong> to branch.</li>
+              <li><strong>Gridlock / Deadlock Demo &amp; Manual Actions:</strong> Click <strong>Simulate Gridlock / Run Deadlock Demo</strong> to trigger a 2-job circular wait and <strong>Resolve</strong> to recover, or use <strong>+ Mechanic Task / createThread()</strong>, <strong>Finish Task / joinThread()</strong>, <strong>Request Equipment / requestIO()</strong>, and <strong>Yield Service Bay / yieldProcess()</strong>.</li>
             </ul>
           </section>
         </div>
