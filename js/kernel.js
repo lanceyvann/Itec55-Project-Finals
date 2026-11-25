@@ -242,7 +242,7 @@ export function sysJoinThread(
     if (!joined) {
       logKernelEvent(
         currentTick,
-        `joinThread() -> No active mechanic threads remaining on PID ${pid ?? '-'}.`,
+        `joinThread() -> No active threads remaining on PID ${pid ?? '-'}.`,
         'KERNEL'
       );
       return false;
@@ -274,7 +274,7 @@ export function sysRequestIO(
     ) {
       logKernelEvent(
         currentTick,
-        `requestIO() failed: Target job is not Ready/Running.`,
+        `requestIO() failed: Target process is not Ready/Running.`,
         'KERNEL'
       );
       return false;
@@ -290,7 +290,7 @@ export function sysRequestIO(
       pcb,
       PROCESS_STATES.WAITING,
       currentTick,
-      `Syscall requestIO() blocked job for ${pcb.ioRemaining} ticks.`
+      `Syscall requestIO() blocked process for ${pcb.ioRemaining} ticks.`
     );
 
     logKernelEvent(
@@ -311,7 +311,7 @@ export function sysYieldProcess(pid, currentTick = getSchedulerState().currentTi
     if (!pcb || pcb.state !== PROCESS_STATES.RUNNING) {
       logKernelEvent(
         currentTick,
-        `yieldProcess() ignored: Only a Running job in the Active Service Bay can yield.`,
+        `yieldProcess() ignored: Only a Running process on CPU can yield.`,
         'KERNEL'
       );
       return false;
@@ -329,7 +329,7 @@ export function sysYieldProcess(pid, currentTick = getSchedulerState().currentTi
 
     logKernelEvent(
       currentTick,
-      `yieldProcess(PID ${pcb.pid}) -> Released Active Service Bay back to Ready Queue.`,
+      `yieldProcess(PID ${pcb.pid}) -> Released CPU back to Ready Queue.`,
       'KERNEL'
     );
     return true;
@@ -345,7 +345,7 @@ export function resetKernel() {
   resetThreadCounter(1);
   logKernelEvent(
     0,
-    'Kernel booted: Shop Operations Manager initialized in User Mode.',
+    'Kernel booted: OS Kernel initialized in User Mode.',
     'BOOT'
   );
 }
