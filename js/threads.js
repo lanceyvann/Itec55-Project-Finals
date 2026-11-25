@@ -65,6 +65,23 @@ export function initializeProcessThreads(pcb) {
 }
 
 /**
+ * Resets existing thread states and instruction pointers back to Tick 0
+ * while preserving any extra threads on preserved processes.
+ */
+export function resetThreadsForReplay() {
+  for (const pcb of getAllProcesses()) {
+    if (!pcb.threads || pcb.threads.length === 0) {
+      initializeProcessThreads(pcb);
+      continue;
+    }
+    for (const tcb of pcb.threads) {
+      tcb.state = 'Ready';
+      tcb.privateRegisters.PC = `0x${(200 + tcb.tid * 4).toString(16).toUpperCase()}`;
+    }
+  }
+}
+
+/**
  * Spawns an additional thread inside an active process.
  */
 export function addThreadToProcess(pid, taskName) {
