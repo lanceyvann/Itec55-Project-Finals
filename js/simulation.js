@@ -333,7 +333,7 @@ export function resetSimulation(presetKey = 'balanced') {
   resetResources();
   resetScheduler();
   resetKernel();
-  logKernelEvent(0, `Loaded "${presetKey}" preset (${starterJobs.length} jobs).`, 'BOOT');
+  logKernelEvent(0, `Loaded "${presetKey}" preset (${starterJobs.length} processes).`, 'BOOT');
 
   snapshots = [];
   viewIndex = -1;
@@ -394,7 +394,7 @@ export function triggerRushHour() {
     setSelectedPid(created[0].pid);
     logKernelEvent(
       currentTick,
-      `Rush Hour activated: spawned ${created.length} predefined jobs (${created
+      `Rush Hour activated: spawned ${created.length} predefined processes (${created
         .map((p) => `PID ${p.pid}`)
         .join(', ')}).`,
       'RUSHHOUR'
@@ -434,7 +434,7 @@ export function stepSimulationTick() {
   }
 
   if (result.completed) {
-    logKernelEvent(result.tick, 'All vehicle service jobs completed.', 'KERNEL');
+    logKernelEvent(result.tick, 'All processes completed.', 'KERNEL');
   }
 
   captureSnapshot(`Tick ${result.tick}`);
@@ -537,7 +537,7 @@ export function resolveDeadlockDemo() {
 
   logKernelEvent(
     tick,
-    `Deadlock resolved: Terminated PID ${victimPid}, freeing Wheel Balancer for remaining job.`,
+    `Deadlock resolved: Terminated PID ${victimPid}, freeing Wheel Balancer for remaining process.`,
     'RECOVERY'
   );
   captureSnapshot(`Tick ${tick} (Resolved)`);
