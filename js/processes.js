@@ -20,7 +20,7 @@ export const SERVICE_TYPES = [
 
 // Internal module state
 let processList = [];
-let nextPid = 1;
+let nextPid = 101;
 let selectedPid = null;
 
 /**
@@ -74,7 +74,7 @@ export function createPCB({
         tick: currentTick,
         from: '-',
         to: PROCESS_STATES.NEW,
-        reason: 'Vehicle job created and PCB initialized.',
+        reason: 'Process created and PCB initialized.',
       },
     ],
     threads: [],
