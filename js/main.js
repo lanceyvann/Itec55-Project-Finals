@@ -48,6 +48,7 @@ import {
   jumpToTickSnapshot,
   previewSnapshot,
   resetSimulation,
+  resetSimulationPreservingProcesses,
   resolveDeadlockDemo,
   resumeFromSnapshot,
   runDeadlockDemo,
@@ -55,12 +56,13 @@ import {
   stepSnapshotBackward,
   stepSnapshotForward,
   syncLiveSnapshot,
+  triggerRushHour,
 } from './simulation.js';
 
 // Dual View Terminology Dictionary (Story View <-> OS View)
 const VIEW_LABELS = {
   story: {
-    brandSubtitle: 'Automotive Tire Service Workshop',
+    brandSubtitle: 'Automotive Tire Service Workshop Simulator',
     navScheduler: 'Service Bay & Gantt',
     navProcesses: 'Vehicle Records',
     navResources: 'Mechanics & Equipment',
@@ -101,7 +103,7 @@ const VIEW_LABELS = {
     fieldParentPid: 'Parent Job (Optional)',
   },
   os: {
-    brandSubtitle: 'Mini-OS Simulator',
+    brandSubtitle: 'Scenario-Driven Mini-OS Simulator',
     navScheduler: 'CPU & Gantt',
     navProcesses: 'PCB Table',
     navResources: 'Threads & Mutexes',
@@ -211,6 +213,7 @@ const dom = {
   speedSelect: document.getElementById('speed-select'),
   presetSelect: document.getElementById('preset-select'),
   btnLoadPreset: document.getElementById('btn-load-preset'),
+  btnRushHour: document.getElementById('btn-rush-hour'),
   tickDisplay: document.getElementById('tick-display'),
   selectedProcessLabel: document.getElementById('selected-process-label'),
   readyQueueList: document.getElementById('ready-queue-list'),
@@ -302,6 +305,7 @@ function updatePlaybackButtons() {
   dom.btnStep.disabled = isRunningLoop || done || deadlocked || replaying;
 
   dom.openAddJobBtn.disabled = replaying;
+  dom.btnRushHour.disabled = replaying;
   dom.btnDeadlockDemo.disabled = replaying;
   dom.btnResolveDeadlock.disabled = replaying || !deadlocked;
 
@@ -924,6 +928,13 @@ function resetAll(presetKey = currentPresetKey) {
   renderAll();
 }
 
+function resetSimulationStateOnly() {
+  pauseSimulation();
+  selectedGanttTick = null;
+  resetSimulationPreservingProcesses();
+  renderAll();
+}
+
 function renderAll() {
   renderSummaryAndMetrics();
   renderQueuesAndBay();
@@ -954,7 +965,7 @@ function bindEvents() {
   dom.btnStart.addEventListener('click', startSimulation);
   dom.btnPause.addEventListener('click', pauseSimulation);
   dom.btnStep.addEventListener('click', runSingleTick);
-  dom.btnReset.addEventListener('click', () => resetAll(currentPresetKey));
+  dom.btnReset.addEventListener('click', resetSimulationStateOnly);
 
   dom.algoSelect.addEventListener('change', () => {
     setAlgorithm(dom.algoSelect.value);
@@ -976,6 +987,15 @@ function bindEvents() {
 
   dom.btnLoadPreset.addEventListener('click', () => {
     resetAll(dom.presetSelect.value);
+  });
+
+  dom.btnRushHour.addEventListener('click', () => {
+    if (getTimeMachineInfo().isReplaying) return;
+    const spawned = triggerRushHour();
+    if (spawned.length > 0) {
+      flashKernelMode();
+      renderAll();
+    }
   });
 
   dom.ganttChart.addEventListener('click', (event) => {
