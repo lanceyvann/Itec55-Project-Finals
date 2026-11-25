@@ -132,7 +132,7 @@ function selectNextProcess() {
       if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
       return a.pid - b.pid;
     })[0];
-    reason = `SJF (Non-Preemptive) selected PID ${chosen.pid} (${chosen.name}) because it has the shortest remaining CPU burst (${chosen.remainingTime} ticks) among ${candidates.length} ready job(s).`;
+    reason = `SJF (Non-Preemptive) selected PID ${chosen.pid} (${chosen.name}) because it has the shortest remaining CPU burst (${chosen.remainingTime} ticks) among ${candidates.length} ready process(es).`;
   } else if (algorithm === ALGORITHMS.RR) {
     chosen = candidates[0];
     reason = `Round Robin selected PID ${chosen.pid} (${chosen.name}) from the front of the FIFO Ready Queue with time quantum Q=${timeQuantum}.`;
@@ -142,7 +142,7 @@ function selectNextProcess() {
       if (a.arrivalTime !== b.arrivalTime) return a.arrivalTime - b.arrivalTime;
       return a.pid - b.pid;
     })[0];
-    reason = `Priority Scheduling selected PID ${chosen.pid} (${chosen.name}) because it has the highest priority (P${chosen.priority}) among ${candidates.length} ready job(s).`;
+    reason = `Priority Scheduling selected PID ${chosen.pid} (${chosen.name}) because it has the highest priority (P${chosen.priority}) among ${candidates.length} ready process(es).`;
   }
 
   // Remove chosen PID from Ready Queue
@@ -262,7 +262,7 @@ export function stepSchedulerTick() {
       chosen,
       PROCESS_STATES.RUNNING,
       currentTick,
-      `Dispatched to Active Service Bay (${algorithm}).`
+      `Dispatched to CPU (${algorithm}).`
     );
     runningPid = chosen.pid;
     currentRunning = chosen;
@@ -271,7 +271,7 @@ export function stepSchedulerTick() {
   }
 
   if (currentRunning && !tickWhyReason) {
-    tickWhyReason = `Continuing PID ${currentRunning.pid} (${currentRunning.name}) in ${algorithm} (${currentRunning.remainingTime} CPU ticks remaining).`;
+    tickWhyReason = `Continuing PID ${currentRunning.pid} (${currentRunning.name}) on CPU under ${algorithm} (${currentRunning.remainingTime} CPU ticks remaining).`;
   }
 
   // 4. Increment waiting time for all jobs waiting in Ready Queue
@@ -351,7 +351,7 @@ export function stepSchedulerTick() {
       serviceType: 'Idle',
       algorithm,
       contextSwitch: false,
-      reason: `Tick ${currentTick}: Service Bay was idle because no vehicle jobs were in the Ready Queue.`,
+      reason: `Tick ${currentTick}: CPU was idle because no processes were in the Ready Queue.`,
     });
   }
 
