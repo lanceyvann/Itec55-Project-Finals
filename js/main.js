@@ -60,7 +60,7 @@ import {
 // Dual View Terminology Dictionary (Story View <-> OS View)
 const VIEW_LABELS = {
   story: {
-    brandSubtitle: 'Automotive Tire Service Workshop Simulator',
+    brandSubtitle: 'Automotive Tire Service Workshop',
     navScheduler: 'Service Bay & Gantt',
     navProcesses: 'Vehicle Records',
     navResources: 'Mechanics & Equipment',
@@ -101,7 +101,7 @@ const VIEW_LABELS = {
     fieldParentPid: 'Parent Job (Optional)',
   },
   os: {
-    brandSubtitle: 'Scenario-Driven Mini-OS Simulator',
+    brandSubtitle: 'Mini-OS Simulator',
     navScheduler: 'CPU & Gantt',
     navProcesses: 'PCB Table',
     navResources: 'Threads & Mutexes',
