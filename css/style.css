@@ -4,24 +4,24 @@
    ========================================================= */
 
 :root {
-  --bg-canvas: #121417;
-  --bg-surface: #1a1d22;
-  --bg-elevated: #22262d;
-  --bg-hover: #292e37;
-  --border-color: #2f3540;
+  --bg-canvas: #eef1f4;
+  --bg-surface: #fafbfd;
+  --bg-elevated: #e3e8ee;
+  --bg-hover: #d6dfe8;
+  --border-color: #c4ced9;
 
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
 
-  --accent-orange: #f97316;
-  --accent-orange-hover: #ea580c;
-  --accent-orange-soft: rgba(249, 115, 22, 0.14);
+  --accent-orange: #d95d14;
+  --accent-orange-hover: #bf4e0c;
+  --accent-orange-soft: #fbe7da;
 
-  --color-green: #22c55e;
-  --color-blue: #38bdf8;
-  --color-amber: #f59e0b;
-  --color-red: #ef4444;
+  --color-green: #1e7e45;
+  --color-blue: #3b6e8c;
+  --color-amber: #b45309;
+  --color-red: #b91c1c;
 
   --radius-sm: 6px;
   --radius-md: 8px;
