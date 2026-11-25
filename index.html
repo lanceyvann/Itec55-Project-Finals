@@ -4,15 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PitStop OS — Tire Service Workshop Mini-OS Simulator</title>
-    <meta
-      name="description"
-      content="Scenario-driven mini-OS simulator demonstrating processes, threads, CPU scheduling, shared equipment locks, kernel calls, and deadlock in a tire service workshop."
-    />
-    <meta property="og:title" content="PitStop OS — Tire Service Workshop Mini-OS Simulator" />
-    <meta
-      property="og:description"
-      content="Interactive ITEC 55 operating system simulator mapped to automotive tire service operations."
-    />
+    <meta name="description"
+      content="Scenario-driven mini-OS simulator demonstrating processes, threads, CPU scheduling, shared equipment locks, kernel calls, and deadlock in a tire service workshop."/>
+    <meta property="og:title" content="PitStop OS — Tire Service Workshop Mini-OS Simulator"/>
+    <meta property="og:description"
+      content="Interactive ITEC 55 operating system simulator mapped to automotive tire service operations."/>
     <meta property="og:type" content="website" />
     <link rel="stylesheet" href="/css/style.css" />
   </head>
@@ -42,11 +38,22 @@
             <span class="mode-value" id="mode-value-text">User Mode</span>
           </div>
 
-          <button type="button" id="dual-view-toggle" class="btn btn-secondary" title="Switch between Tire Shop Story View and Operating System View">View: Story Mode</button>
+          <button type="button" id="dual-view-toggle" class="btn btn-secondary" 
+            title="Switch between Tire Shop Story View and Operating System View"> View: Story Mode
+          </button>
 
-          <button type="button" id="open-guide-btn" class="btn btn-secondary" title="Open Story Mode & OS Mode Concept Guide">Guide</button>
+          <button
+            type="button"
+            id="open-guide-btn"
+            class="btn btn-secondary"
+            title="Open Story Mode & OS Mode Concept Guide"
+          >
+            Guide
+          </button>
 
-          <button type="button" id="open-add-job-btn" class="btn btn-primary" data-i18n="addJobBtn">+ Add Vehicle Job</button>
+          <button type="button" id="open-add-job-btn" class="btn btn-primary" data-i18n="addJobBtn">
+            + Add Vehicle Job
+          </button>
         </div>
       </header>
 
@@ -65,14 +72,21 @@
             <select id="algo-select" class="select-input">
               <option value="FCFS">FCFS (First-Come, First-Served)</option>
               <option value="SJF">SJF (Non-Preemptive)</option>
-              <option value="RR">RR (Round Robin)</option>
-              <option value="PRIORITY">Priority</option>
+              <option value="RR">Round Robin (RR)</option>
+              <option value="PRIORITY">Priority Scheduling</option>
             </select>
           </label>
 
           <label class="field-inline" for="quantum-input" id="quantum-wrapper">
             <span>Quantum</span>
-            <input type="number" id="quantum-input" class="number-input" min="1" max="10" value="2"/>
+            <input
+              type="number"
+              id="quantum-input"
+              class="number-input"
+              min="1"
+              max="10"
+              value="2"
+            />
           </label>
 
           <label class="field-inline" for="speed-select">
@@ -95,6 +109,14 @@
             </select>
           </label>
           <button type="button" id="btn-load-preset" class="btn btn-secondary">Load</button>
+          <button
+            type="button"
+            id="btn-rush-hour"
+            class="btn btn-secondary"
+            title="Spawn 2–4 predefined vehicle service jobs"
+          >
+            Rush Hour
+          </button>
           <div class="tick-counter">
             <span>Tick</span>
             <strong id="tick-display" class="tabular">0</strong>
@@ -230,10 +252,19 @@
                     >
                       <option value="">No decisions yet</option>
                     </select>
-                    <button type="button" id="btn-why-jump-tick" class="btn btn-secondary btn-sm" disabled>View in Time Machine</button>
+                    <button
+                      type="button"
+                      id="btn-why-jump-tick"
+                      class="btn btn-secondary btn-sm"
+                      disabled
+                    >
+                      View in Time Machine
+                    </button>
                   </div>
                 </div>
-                <p id="why-explainer-text" class="why-text">Select a block in the Gantt chart above to view why the scheduler picked that vehicle service job at that tick.
+                <p id="why-explainer-text" class="why-text">
+                  Select a block in the Gantt chart above to view why the scheduler picked that
+                  vehicle service job at that tick.
                 </p>
               </div>
             </section>
@@ -252,7 +283,10 @@
 
               <div class="thread-shared-box">
                 <div class="sub-label" data-i18n="sharedResourcesLabel">Shared Work-Order Resources</div>
-                <p id="shared-resources-text" class="muted-note">Select a vehicle job from the table to inspect shared work-order memory and individual mechanic thread registers.</p>
+                <p id="shared-resources-text" class="muted-note">
+                  Select a vehicle job from the table to inspect shared work-order memory and
+                  individual mechanic thread registers.
+                </p>
               </div>
 
               <div class="table-wrap">
@@ -277,7 +311,9 @@
             <!-- Shared Equipment Resources & Deadlock Demo -->
             <section class="panel panel-grow">
               <div class="panel-header">
-                <h2 class="panel-title" data-i18n="equipmentTitle">Service Equipment &amp; Mutex Locks</h2>
+                <h2 class="panel-title" data-i18n="equipmentTitle">
+                  Service Equipment &amp; Mutex Locks
+                </h2>
                 <span class="panel-meta" id="deadlock-status-label">Status: Normal</span>
               </div>
 
@@ -303,11 +339,23 @@
                 <div class="deadlock-header">
                   <strong class="deadlock-title">Deadlock Demonstration</strong>
                   <div class="deadlock-actions">
-                    <button type="button" id="btn-deadlock-demo" class="btn btn-secondary btn-sm">Run Deadlock Demo</button>
-                    <button type="button" id="btn-resolve-deadlock" class="btn btn-danger-outline btn-sm" disabled>Resolve</button>
+                    <button type="button" id="btn-deadlock-demo" class="btn btn-secondary btn-sm">
+                      Run Deadlock Demo
+                    </button>
+                    <button
+                      type="button"
+                      id="btn-resolve-deadlock"
+                      class="btn btn-danger-outline btn-sm"
+                      disabled
+                    >
+                      Resolve
+                    </button>
                   </div>
                 </div>
-                <p id="deadlock-explanation" class="muted-note">Triggers a 2-job circular wait between Pneumatic Tire Changer and Digital Dynamic Wheel Balancer.</p>
+                <p id="deadlock-explanation" class="muted-note">
+                  Triggers a 2-job circular wait between Pneumatic Tire Changer and Digital Dynamic
+                  Wheel Balancer.
+                </p>
               </div>
             </section>
           </aside>
@@ -316,7 +364,9 @@
         <!-- Full-Width Vehicle Service Records / PCB Table -->
         <section id="pcb-section" class="panel">
           <div class="panel-header">
-            <h2 class="panel-title" data-i18n="pcbTableTitle">Vehicle Service Records (Process Control Blocks)</h2>
+            <h2 class="panel-title" data-i18n="pcbTableTitle">
+              Vehicle Service Records (Process Control Blocks)
+            </h2>
             <span class="panel-meta" data-i18n="pcbHint">Click a vehicle record to view mechanic tasks</span>
           </div>
 
@@ -359,10 +409,18 @@
             </div>
 
             <div class="syscall-bar" aria-label="Manual system calls">
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="createThread">createThread()</button>
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="joinThread">joinThread()</button>
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="requestIO">requestIO()</button>
-              <button type="button" class="btn btn-secondary btn-sm" data-syscall="yieldProcess">yieldProcess()</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="createThread">
+                createThread()
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="joinThread">
+                joinThread()
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="requestIO">
+                requestIO()
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-syscall="yieldProcess">
+                yieldProcess()
+              </button>
             </div>
 
             <div id="kernel-log-list" class="kernel-log" aria-live="polite">
@@ -380,17 +438,34 @@
               <span class="panel-meta tabular" id="snapshot-count-label">0 snapshots</span>
             </div>
 
-            <p class="muted-note">Scrub backward or forward through saved simulation ticks to inspect any past state, then click <strong>Resume Here</strong> to branch a new timeline from that tick.</p>
+            <p class="muted-note">
+              Scrub backward or forward through saved simulation ticks to inspect any past state,
+              then click <strong>Resume Here</strong> to branch a new timeline from that tick.
+            </p>
 
             <div class="time-machine-controls">
-              <button type="button" id="btn-tm-prev" class="btn btn-secondary btn-sm" disabled>Prev Tick</button>
-              <input type="range" id="tm-slider" class="tm-slider" min="0" max="0" value="0" disabled/>
-              <button type="button" id="btn-tm-next" class="btn btn-secondary btn-sm" disabled>Next Tick</button>
+              <button type="button" id="btn-tm-prev" class="btn btn-secondary btn-sm" disabled>
+                Prev Tick
+              </button>
+              <input
+                type="range"
+                id="tm-slider"
+                class="tm-slider"
+                min="0"
+                max="0"
+                value="0"
+                disabled
+              />
+              <button type="button" id="btn-tm-next" class="btn btn-secondary btn-sm" disabled>
+                Next Tick
+              </button>
             </div>
 
             <div class="time-machine-footer">
               <span id="tm-status-text" class="muted-note">Viewing live state</span>
-              <button type="button" id="btn-tm-resume" class="btn btn-primary btn-sm" disabled>Resume Here</button>
+              <button type="button" id="btn-tm-resume" class="btn btn-primary btn-sm" disabled>
+                Resume Here
+              </button>
             </div>
           </section>
         </div>
@@ -402,13 +477,20 @@
       <div class="modal-card">
         <div class="modal-header">
           <h2 id="add-job-title">Add Vehicle Service Job</h2>
-          <button type="button" id="close-add-job-btn" class="btn btn-secondary btn-sm">Close</button>
+          <button type="button" id="close-add-job-btn" class="btn btn-secondary btn-sm">
+            Close
+          </button>
         </div>
 
         <form id="add-job-form" class="modal-form">
           <label class="form-field">
             <span data-i18n="fieldJobName">Vehicle / Job Name</span>
-            <input type="text" id="input-job-name" placeholder="e.g., Sedan Civic - Front Tires" required/>
+            <input
+              type="text"
+              id="input-job-name"
+              placeholder="e.g., Sedan Civic - Front Tires"
+              required
+            />
           </label>
 
           <div class="form-row">
