@@ -1,20 +1,14 @@
 // =========================================================
-// PitStop OS - CPU Scheduling Engine (Phase 3)
-// Implements FCFS, SJF (Non-Preemptive), Round Robin, and
-// Priority Scheduling with Ready Queue, I/O progression,
+// CPU Scheduling Engine (Phase 3)
+// Implements FCFS, SJF (Non-Preemptive), Round Robin, and Priority Scheduling with Ready Queue, I/O progression,
 // Context Switch tracking, and plain-language "Why?" reasons.
 // =========================================================
 
 import {
-  PROCESS_STATES,
-  getAllProcesses,
-  getProcessByPid,
-  transitionProcessState,
+  PROCESS_STATES, getAllProcesses, getProcessByPid, transitionProcessState,
 } from './processes.js';
 import {
-  acquireResource,
-  getRequiredResourceForService,
-  releaseAllResourcesForPid,
+  acquireResource, getRequiredResourceForService, releaseAllResourcesForPid,
 } from './resources.js';
 import { syncThreadsWithProcesses } from './threads.js';
 
@@ -63,10 +57,8 @@ export function setTimeQuantum(nextQuantum) {
   }
 }
 
-/**
- * Syncs newly added processes (e.g., added mid-simulation via modal or +Child)
- * into the Ready Queue if they are already in READY state.
- */
+/*Syncs newly added processes (e.g., added mid-simulation via modal or +Child) 
+into the Ready Queue if they are already in READY state.*/
 export function enqueueReadyProcess(pid) {
   const pcb = getProcessByPid(pid);
   if (!pcb || pcb.state !== PROCESS_STATES.READY) return;
@@ -75,9 +67,7 @@ export function enqueueReadyProcess(pid) {
   }
 }
 
-/**
- * Removes a manually terminated process from active scheduler tracking.
- */
+/*Removes a manually terminated process from active scheduler tracking.*/
 export function removePidFromScheduler(pid) {
   const numPid = Number(pid);
   readyQueue = readyQueue.filter((id) => id !== numPid);
@@ -86,9 +76,7 @@ export function removePidFromScheduler(pid) {
   }
 }
 
-/**
- * Resets scheduler counters and re-populates Ready Queue from current Ready PCBs.
- */
+/*Resets scheduler counters and re-populates Ready Queue from current Ready PCBs.*/
 export function resetScheduler() {
   currentTick = 0;
   readyQueue = [];
@@ -105,10 +93,8 @@ export function resetScheduler() {
   }
 }
 
-/**
- * Picks the next Ready PID based on the selected scheduling algorithm
- * and returns both the chosen PCB and a plain-language "Why?" explanation.
- */
+/*Picks the next Ready PID based on the selected scheduling algorithm and 
+returns both the chosen PCB and a plain-language "Why?" explanation.*/
 function selectNextProcess() {
   // Filter out any stale PIDs just in case
   readyQueue = readyQueue.filter((pid) => {
@@ -151,19 +137,14 @@ function selectNextProcess() {
   return { chosen, reason };
 }
 
-/**
- * Checks if all processes in the system have terminated.
- */
+/*Checks if all processes in the system have terminated.*/
 export function isSimulationComplete() {
   const processes = getAllProcesses();
   if (processes.length === 0) return true;
   return processes.every((p) => p.state === PROCESS_STATES.TERMINATED);
 }
 
-/**
- * Advances the simulation by exactly ONE tick.
- * Returns a tick summary object for UI and logging.
- */
+/*Advances the simulation by exactly ONE tick. Returns a tick summary object for UI and logging.*/
 export function stepSchedulerTick() {
   const events = [];
   const allProcesses = getAllProcesses();
@@ -389,9 +370,7 @@ export function stepSchedulerTick() {
   };
 }
 
-/**
- * Computes real-time scheduling performance metrics from actual simulation data.
- */
+/*Computes real-time scheduling performance metrics from actual simulation data.*/
 export function calculateMetrics() {
   const processes = getAllProcesses();
   const terminated = processes.filter(
@@ -438,9 +417,7 @@ export function calculateMetrics() {
   };
 }
 
-/**
- * Exports scheduler state for Time Machine snapshots.
- */
+/*Exports scheduler state for Time Machine snapshots.*/
 export function exportSchedulerState() {
   return {
     currentTick,
@@ -455,9 +432,7 @@ export function exportSchedulerState() {
   };
 }
 
-/**
- * Restores scheduler state from a Time Machine snapshot.
- */
+/*Restores scheduler state from a Time Machine snapshot.*/
 export function importSchedulerState(snapshot) {
   currentTick = snapshot.currentTick;
   algorithm = snapshot.algorithm;
