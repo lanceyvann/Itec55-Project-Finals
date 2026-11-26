@@ -1,68 +1,35 @@
 // =========================================================
-// PitStop OS - Main UI Controller (Phase 3)
-// Wires simulation playback (Start, Pause, Step, Reset),
-// algorithm/quantum/speed selectors, presets, and PCB UI.
+// Main UI Controller (Phase 3)
+// Wires simulation playback (Start, Pause, Step, Reset), algorithm/quantum/speed selectors, presets, and PCB UI.
 // =========================================================
 
 import {
-  PROCESS_STATES,
-  getAllProcesses,
-  getProcessByPid,
-  getProcessSummaryCounts,
-  getSelectedPid,
-  setSelectedPid,
-  spawnChildProcess,
-  updateProcessPriority,
+  PROCESS_STATES, getAllProcesses, getProcessByPid, getProcessSummaryCounts,
+  getSelectedPid, setSelectedPid, spawnChildProcess, updateProcessPriority,
 } from './processes.js';
 import {
-  ALGORITHMS,
-  calculateMetrics,
-  enqueueReadyProcess,
-  getSchedulerState,
-  isSimulationComplete,
-  setAlgorithm,
-  setTimeQuantum,
+  ALGORITHMS, calculateMetrics, enqueueReadyProcess, getSchedulerState,
+  isSimulationComplete, setAlgorithm, setTimeQuantum,
 } from './scheduler.js';
 import {
-  CPU_MODES,
-  clearKernelLogs,
-  getKernelLogs,
-  getKernelMode,
-  logKernelEvent,
-  sysCreateProcess,
-  sysCreateThread,
-  sysDeleteProcess,
-  sysJoinThread,
-  sysRequestIO,
-  sysTerminateProcess,
-  sysUpdateProcess,
-  sysYieldProcess,
+  CPU_MODES, clearKernelLogs, getKernelLogs, getKernelMode,
+  logKernelEvent, sysCreateProcess, sysCreateThread,
+  sysDeleteProcess, sysJoinThread, sysRequestIO,
+  sysTerminateProcess, sysUpdateProcess, sysYieldProcess,
 } from './kernel.js';
 import {
-  getSharedProcessResources,
-  initializeProcessThreads,
+  getSharedProcessResources, initializeProcessThreads,
 } from './threads.js';
 import { getDeadlockStatus, getResourceById, getResources } from './resources.js';
 import {
-  getTimeMachineInfo,
-  jumpToTickSnapshot,
-  previewSnapshot,
-  resetSimulation,
-  resetSimulationPreservingProcesses,
-  resolveDeadlockDemo,
-  resumeFromSnapshot,
-  runDeadlockDemo,
-  stepSimulationTick,
-  stepSnapshotBackward,
-  stepSnapshotForward,
-  syncLiveSnapshot,
-  triggerRushHour,
+  getTimeMachineInfo, getWorkloadState, jumpToTickSnapshot, markWorkloadCustomized, previewSnapshot,
+  resetSimulation, resetSimulationPreservingProcesses, resolveDeadlockDemo, resumeFromSnapshot,
+  runDeadlockDemo, stepSimulationTick, stepSnapshotBackward, stepSnapshotForward, syncLiveSnapshot, triggerRushHour,
 } from './simulation.js';
 import {
-  BENCHMARK_ALGORITHMS,
-  BENCHMARK_WORKLOADS,
-  runBenchmarkSuite,
+  BENCHMARK_ALGORITHMS, BENCHMARK_WORKLOADS, runBenchmarkSuite,
 } from './benchmark.js';
+import { DUAL_VIEW_TERMINOLOGY } from './guide.js';
 
 // Dual View Terminology Dictionary (Story View <-> OS View)
 const VIEW_LABELS = {
@@ -77,6 +44,9 @@ const VIEW_LABELS = {
     presetBalanced: 'Balanced Shop Mix',
     presetCpuHeavy: 'Bay-Heavy (Long Services)',
     presetIoHeavy: 'Equipment-Heavy (Frequent Locks)',
+    activeWorkloadLabel: 'Workload',
+    workloadDeadlockDemo: 'Shop Gridlock Demo',
+    workloadCustomTag: 'Custom',
     rushHourBtn: 'Rush Hour',
     kpiTotal: 'Total Vehicle Jobs',
     kpiRunning: 'Undergoing Tire Service',
@@ -150,6 +120,12 @@ const VIEW_LABELS = {
     benchColTicks: 'Shift Ticks',
     benchColVerify: 'Verification',
     benchTestsTitle: 'Automated Workshop Engine & Reproducibility Checks',
+    benchCardUtilTitle: 'Bay Utilization & Metric Breakdown',
+    benchOpenUtilBtn: 'Open Bay Utilization',
+    benchCardProfileTitle: 'Multi-Metric Scheduling Comparison',
+    benchOpenProfileBtn: 'Open Multi-Metric View',
+    benchCardResultsTitle: 'Consolidated Shop Results Table',
+    benchOpenResultsBtn: 'Open Benchmark Results',
     pcbModalTitle: 'Vehicle Service Record',
     addJobBtn: '+ Add Vehicle Job',
     fieldJobName: 'Vehicle / Job Name',
@@ -171,6 +147,9 @@ const VIEW_LABELS = {
     presetBalanced: 'Balanced Workload',
     presetCpuHeavy: 'CPU-Heavy (Long Bursts)',
     presetIoHeavy: 'I/O-Heavy (Frequent Locks)',
+    activeWorkloadLabel: 'Workload',
+    workloadDeadlockDemo: 'Deadlock Demo',
+    workloadCustomTag: 'Custom',
     rushHourBtn: 'Burst Workload',
     kpiTotal: 'Total Processes',
     kpiRunning: 'Running Processes',
@@ -244,6 +223,12 @@ const VIEW_LABELS = {
     benchColTicks: 'Total Ticks',
     benchColVerify: 'Verification',
     benchTestsTitle: 'Automated Engine & Reproducibility Verification Suite',
+    benchCardUtilTitle: 'CPU Utilization & Metric Breakdown',
+    benchOpenUtilBtn: 'Open CPU Utilization',
+    benchCardProfileTitle: 'Multi-Metric Scheduling Comparison',
+    benchOpenProfileBtn: 'Open Multi-Metric View',
+    benchCardResultsTitle: 'Consolidated Benchmark Results Table',
+    benchOpenResultsBtn: 'Open Benchmark Results',
     pcbModalTitle: 'Process Control Block (PCB) Details',
     addJobBtn: '+ Add Process',
     fieldJobName: 'Process Name',
@@ -258,22 +243,14 @@ const VIEW_LABELS = {
 
 const STORY_STATE_LABELS = {
   New: 'Checked In',
-  Ready: 'Waiting for Service',
-  Running: 'Undergoing Tire Service',
-  Waiting: 'Waiting for Equipment',
-  Terminated: 'Service Completed',
+  Ready: 'Waiting for Service', Running: 'Undergoing Tire Service',
+  Waiting: 'Waiting for Equipment', Terminated: 'Service Completed',
 };
 
 const STORY_LOG_SOURCES = {
-  BOOT: 'SHOP',
-  KERNEL: 'MANAGER',
-  SYSCALL: 'REQUEST',
-  SCHED: 'BAY',
-  RESOURCE: 'EQUIP',
-  DEADLOCK: 'GRIDLOCK',
-  RECOVERY: 'RECOVERY',
-  RUSHHOUR: 'RUSH HOUR',
-  TIMEMACHINE: 'REPLAY',
+  BOOT: 'SHOP', KERNEL: 'MANAGER', SYSCALL: 'REQUEST', SCHED: 'BAY',
+  RESOURCE: 'EQUIP', DEADLOCK: 'GRIDLOCK', RECOVERY: 'RECOVERY',
+  RUSHHOUR: 'RUSH HOUR', TIMEMACHINE: 'REPLAY',
 };
 
 const OS_LOG_SOURCES = {
@@ -281,14 +258,10 @@ const OS_LOG_SOURCES = {
 };
 
 const STORY_SYSCALL_NAMES = {
-  'createProcess()': 'Check-In Vehicle',
-  'terminateProcess()': 'Cancel / Complete Job',
-  'updateProcess()': 'Update Service Order',
-  'deleteProcess()': 'Remove Vehicle Record',
-  'createThread()': 'Add Mechanic Task',
-  'joinThread()': 'Finish Mechanic Task',
-  'requestIO()': 'Request Equipment',
-  'yieldProcess()': 'Yield Service Bay',
+  'createProcess()': 'Check-In Vehicle', 'terminateProcess()': 'Cancel / Complete Job',
+  'updateProcess()': 'Update Service Order', 'deleteProcess()': 'Remove Vehicle Record',
+  'createThread()': 'Add Mechanic Task', 'joinThread()': 'Finish Mechanic Task',
+  'requestIO()': 'Request Equipment', 'yieldProcess()': 'Yield Service Bay',
 };
 
 let currentViewMode = 'story';
@@ -305,8 +278,28 @@ function formatStateLabel(state) {
   return state;
 }
 
+function formatPidNumber(pid) {
+  if (pid === null || pid === undefined || pid === '') return '000';
+  const num = Number(pid);
+  if (Number.isNaN(num) || num <= 0) return '000';
+  return String(num).padStart(3, '0');
+}
+
 function formatId(pid) {
-  return currentViewMode === 'story' ? `Job #${pid}` : `PID ${pid}`;
+  const padded = formatPidNumber(pid);
+  return currentViewMode === 'story' ? `Job #${padded}` : `PID ${padded}`;
+}
+
+function formatPpidDisplay(ppid, detailed = false) {
+  const hasValidParent = Boolean(ppid && getProcessByPid(ppid));
+  if (!hasValidParent) {
+    if (!detailed) return '000';
+    return currentViewMode === 'story' ? '000 (None / Top-level)' : '000 (Root / N/A)';
+  }
+  if (currentViewMode === 'story') {
+    return `Job #${formatPidNumber(ppid)}`;
+  }
+  return detailed ? `PID ${formatPidNumber(ppid)}` : formatPidNumber(ppid);
 }
 
 function formatModeLabel(mode) {
@@ -331,20 +324,16 @@ function toStoryText(text) {
   // Ordered full-sentence / structured translations (canonical OS -> PitStop Story)
   const exactReplacements = [
     [
-      'Process created and PCB initialized.',
-      'Vehicle job checked in and service record created.',
+      'Process created and PCB initialized.', 'Vehicle job checked in and service record created.',
     ],
     [
-      'Arrival time reached; admitted to Ready Queue.',
-      'Vehicle arrived at check-in; moved to Bay Waiting Line.',
+      'Arrival time reached; admitted to Ready Queue.', 'Vehicle arrived at check-in; moved to Bay Waiting Line.',
     ],
     [
-      'Arrival time updated; admitted to Ready Queue.',
-      'Check-in tick updated; moved to Bay Waiting Line.',
+      'Arrival time updated; admitted to Ready Queue.', 'Check-in tick updated; moved to Bay Waiting Line.',
     ],
     [
-      'Simulation reset; process record preserved.',
-      'Shift reset; vehicle service record preserved.',
+      'Simulation reset; process record preserved.', 'Shift reset; vehicle service record preserved.',
     ],
     ['Terminated by user.', 'Cancelled by shop operator.'],
     ['Terminated manually from PCB table.', 'Cancelled manually from vehicle records.'],
@@ -354,29 +343,23 @@ function toStoryText(text) {
       'Job cancelled by Shop Manager to break equipment gridlock.',
     ],
     [
-      'Kernel booted: OS Kernel initialized in User Mode.',
-      'Shop opened: Shop Operations Manager ready on Shop Floor.',
+      'Kernel booted: OS Kernel initialized in User Mode.', 'Shop opened: Shop Operations Manager ready on Shop Floor.',
     ],
     ['All processes completed.', 'All vehicle service jobs completed.'],
     [
-      'Simulation halted: Circular deadlock active. Click Resolve or Reset.',
-      'Shift halted: Equipment gridlock active. Click Resolve or Reset.',
+      'Simulation halted: Circular deadlock active. Click Resolve or Reset.', 'Shift halted: Equipment gridlock active. Click Resolve or Reset.',
     ],
     [
-      'createThread() failed: No active process selected.',
-      'Add Mechanic Task failed: No active vehicle job selected.',
+      'createThread() failed: No active process selected.', 'Add Mechanic Task failed: No active vehicle job selected.',
     ],
     [
-      'requestIO() failed: Target process is not Ready/Running.',
-      'Request Equipment failed: Selected vehicle is not waiting or in bay.',
+      'requestIO() failed: Target process is not Ready/Running.', 'Request Equipment failed: Selected vehicle is not waiting or in bay.',
     ],
     [
-      'yieldProcess() ignored: Only a Running process on CPU can yield.',
-      'Yield Bay ignored: Only a vehicle currently in the Active Service Bay can yield.',
+      'yieldProcess() ignored: Only a Running process on CPU can yield.', 'Yield Bay ignored: Only a vehicle currently in the Active Service Bay can yield.',
     ],
     [
-      'Voluntarily yielded CPU via yieldProcess() syscall.',
-      'Voluntarily left Active Service Bay to let another vehicle enter.',
+      'Voluntarily yielded CPU via yieldProcess() syscall.', 'Voluntarily left Active Service Bay to let another vehicle enter.',
     ],
   ];
 
@@ -602,25 +585,32 @@ function toStoryText(text) {
     .replace(/\bContext Switch\b/g, 'Service Bay Changeover')
     .replace(/\bDeadlock\b/g, 'Gridlock')
     .replace(/\bCPU\b/g, 'Active Service Bay')
-    .replace(/\bmutex(es)?\b/gi, (_, plural) => (plural ? 'equipment locks' : 'equipment lock'));
+    .replace(/\bmutex(es)?\b/gi, (_, plural) => (plural ? 'equipment locks' : 'equipment lock'))
+    .replace(/Job #(\d+)\b/g, (_, num) => `Job #${formatPidNumber(num)}`);
 
   return out;
 }
 
 function formatDualText(text) {
+  if (typeof text !== 'string' || !text) return text;
   if (currentViewMode === 'story') {
     return toStoryText(text);
   }
-  return text;
+  return text.replace(/\bPID\s+(\d+)\b/g, (_, num) => `PID ${formatPidNumber(num)}`);
 }
 
 // Cached DOM references
 const dom = {
+  topHeader: document.getElementById('top-header'),
+  navToggleBtn: document.getElementById('nav-toggle-btn'),
+  topNavMenu: document.getElementById('top-nav-menu'),
+  navLinks: Array.from(document.querySelectorAll('#top-nav-menu .nav-link')),
   dualViewToggle: document.getElementById('dual-view-toggle'),
   openGuideBtn: document.getElementById('open-guide-btn'),
   guideModal: document.getElementById('guide-modal'),
+  guideModalTitle: document.getElementById('guide-modal-title'),
+  guideMappingBody: document.getElementById('guide-mapping-body'),
   closeGuideModalBtn: document.getElementById('close-guide-modal-btn'),
-  ackGuideBtn: document.getElementById('ack-guide-btn'),
   openAddJobBtn: document.getElementById('open-add-job-btn'),
   addJobModal: document.getElementById('add-job-modal'),
   addJobTitle: document.getElementById('add-job-title'),
@@ -657,6 +647,8 @@ const dom = {
   presetSelect: document.getElementById('preset-select'),
   btnLoadPreset: document.getElementById('btn-load-preset'),
   btnRushHour: document.getElementById('btn-rush-hour'),
+  activeWorkloadReadout: document.getElementById('active-workload-readout'),
+  activeWorkloadDisplay: document.getElementById('active-workload-display'),
   tickDisplay: document.getElementById('tick-display'),
   selectedProcessLabel: document.getElementById('selected-process-label'),
   readyQueueList: document.getElementById('ready-queue-list'),
@@ -697,12 +689,29 @@ const dom = {
   benchmarkQuantumInput: document.getElementById('benchmark-quantum-input'),
   btnRunBenchmark: document.getElementById('btn-run-benchmark'),
   benchmarkHighlights: document.getElementById('benchmark-highlights'),
+  benchUtilPreview: document.getElementById('bench-util-preview'),
+  benchProfilePreview: document.getElementById('bench-profile-preview'),
+  benchResultsPreview: document.getElementById('bench-results-preview'),
+  openBenchUtilBtn: document.getElementById('open-bench-util-btn'),
+  openBenchProfileBtn: document.getElementById('open-bench-profile-btn'),
+  openBenchResultsBtn: document.getElementById('open-bench-results-btn'),
+  benchmarkUtilModal: document.getElementById('benchmark-util-modal'),
+  closeBenchUtilBtn: document.getElementById('close-bench-util-btn'),
+  chartUtilTitle: document.getElementById('chart-util-title'),
+  benchmarkUtilChart: document.getElementById('benchmark-util-chart'),
   chartMetricTitle: document.getElementById('chart-metric-title'),
+  chartMetricSubtitle: document.getElementById('chart-metric-subtitle'),
   chartAlgoLegend: document.getElementById('chart-algo-legend'),
   benchmarkMetricChart: document.getElementById('benchmark-metric-chart'),
+  benchmarkProfileModal: document.getElementById('benchmark-profile-modal'),
+  closeBenchProfileBtn: document.getElementById('close-bench-profile-btn'),
   chartProfileTitle: document.getElementById('chart-profile-title'),
   chartProfileSubtitle: document.getElementById('chart-profile-subtitle'),
+  chartProfileLegend: document.getElementById('chart-profile-legend'),
   benchmarkProfileChart: document.getElementById('benchmark-profile-chart'),
+  benchmarkResultsModal: document.getElementById('benchmark-results-modal'),
+  closeBenchResultsBtn: document.getElementById('close-bench-results-btn'),
+  benchResultsModalMeta: document.getElementById('bench-results-modal-meta'),
   benchmarkTableBody: document.getElementById('benchmark-table-body'),
   benchmarkTestStrip: document.getElementById('benchmark-test-strip'),
 };
@@ -719,17 +728,17 @@ const ALGO_COLORS = {
 let kernelFlashTimer = null;
 
 const PID_COLORS = [
-  '#f97316', // orange
-  '#38bdf8', // sky blue
-  '#22c55e', // green
-  '#eab308', // yellow
-  '#a78bfa', // violet
-  '#2dd4bf', // teal
+  '#c95b2b', // burnt orange
+  '#2d6f8e', // workshop steel blue
+  '#4e6e38', // olive green
+  '#9e621b', // ochre amber
+  '#6d5593', // muted plum
+  '#2a7b76', // deep teal
 ];
 
 function getPidColor(pid) {
-  if (!pid) return '#6b7280';
-  return PID_COLORS[Math.abs(Number(pid) - 101) % PID_COLORS.length];
+  if (!pid) return '#6c7a71';
+  return PID_COLORS[Math.abs(Number(pid) - 1) % PID_COLORS.length];
 }
 
 function getStateClass(state) {
@@ -766,10 +775,49 @@ function applyDualViewLabels() {
     currentViewMode === 'story'
       ? 'Spawn 2–4 predefined vehicle service jobs'
       : 'Spawn 2–4 predefined burst processes';
+  if (dom.activeWorkloadReadout) {
+    dom.activeWorkloadReadout.title =
+      currentViewMode === 'story'
+        ? 'Active workshop workload & records status'
+        : 'Active simulation workload & records status';
+  }
   const isKernelFlash = dom.kernelModeIndicator.classList.contains('is-kernel');
   dom.modeValueText.textContent = formatModeLabel(
     isKernelFlash ? CPU_MODES.KERNEL : getKernelMode()
   );
+  renderGuideModal();
+}
+
+function syncToolbarAndWorkloadDisplay() {
+  const schedState = getSchedulerState();
+  if (dom.algoSelect.value !== schedState.algorithm) {
+    dom.algoSelect.value = schedState.algorithm;
+  }
+  if (dom.quantumInput.value !== String(schedState.timeQuantum)) {
+    dom.quantumInput.value = String(schedState.timeQuantum);
+  }
+  updateQuantumVisibility();
+
+  const workloadState = getWorkloadState();
+  const dict = VIEW_LABELS[currentViewMode];
+
+  if (workloadState.isPreset) {
+    currentPresetKey = workloadState.activeWorkloadKey;
+    if (dom.presetSelect.value !== workloadState.activeWorkloadKey) {
+      dom.presetSelect.value = workloadState.activeWorkloadKey;
+    }
+  }
+
+  if (dom.activeWorkloadDisplay) {
+    let label =
+      workloadState.activeWorkloadKey === 'deadlock-demo'
+        ? dict.workloadDeadlockDemo
+        : getWorkloadDisplayName(workloadState.activeWorkloadKey);
+    if (workloadState.isPreset && workloadState.isCustomized) {
+      label = `${label} (${dict.workloadCustomTag})`;
+    }
+    dom.activeWorkloadDisplay.textContent = label;
+  }
 }
 
 function updatePlaybackButtons() {
@@ -1009,8 +1057,11 @@ function renderPcbTable() {
       const isSelected = pcb.pid === selectedPid;
       const isTerminated = pcb.state === PROCESS_STATES.TERMINATED;
       const disableMutation = isTerminated || replaying;
-      const pidLabel = currentViewMode === 'story' ? `Job #${pcb.pid}` : `${pcb.pid}`;
-      const ppidText = pcb.ppid ? formatId(pcb.ppid) : '-';
+      const pidLabel =
+        currentViewMode === 'story'
+          ? `Job #${formatPidNumber(pcb.pid)}`
+          : formatPidNumber(pcb.pid);
+      const ppidText = formatPpidDisplay(pcb.ppid, false);
       const stateLabel = formatStateLabel(pcb.state);
 
       return `
@@ -1034,7 +1085,7 @@ function renderPcbTable() {
             />
           </td>
           <td class="tabular">${pcb.arrivalTime}</td>
-          <td class="tabular">${pcb.cpuBurst} / ${pcb.ioBurst}</td>
+          <td class="tabular col-center">${pcb.cpuBurst} / ${pcb.ioBurst}</td>
           <td class="tabular">${pcb.remainingTime}</td>
           <td>
             <div class="action-group">
@@ -1115,6 +1166,58 @@ function syncJobModalCopy() {
     : 'e.g., Worker Process A';
 }
 
+const modalReturnFocus = new WeakMap();
+
+function getAllModalElements() {
+  return [
+    dom.addJobModal,
+    dom.pcbModal,
+    dom.guideModal,
+    dom.benchmarkUtilModal,
+    dom.benchmarkProfileModal,
+    dom.benchmarkResultsModal,
+  ].filter(Boolean);
+}
+
+function syncBodyScrollLock() {
+  const anyModalOpen = getAllModalElements().some(
+    (modalEl) => !modalEl.classList.contains('hidden')
+  );
+  document.body.classList.toggle('modal-open', anyModalOpen);
+}
+
+function openAccessibleModal(modalEl, focusTarget = null) {
+  if (!modalEl) return;
+  const opener =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (opener && !modalEl.contains(opener)) {
+    modalReturnFocus.set(modalEl, opener);
+  }
+  modalEl.classList.remove('hidden');
+  syncBodyScrollLock();
+
+  const target =
+    focusTarget ||
+    modalEl.querySelector(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+  if (target instanceof HTMLElement) {
+    target.focus();
+  }
+}
+
+function closeAccessibleModal(modalEl) {
+  if (!modalEl || modalEl.classList.contains('hidden')) return;
+  modalEl.classList.add('hidden');
+  syncBodyScrollLock();
+
+  const opener = modalReturnFocus.get(modalEl);
+  modalReturnFocus.delete(modalEl);
+  if (opener && opener.isConnected && !opener.disabled) {
+    opener.focus();
+  }
+}
+
 function openAddJobModal() {
   if (getTimeMachineInfo().isReplaying) return;
   editingPid = null;
@@ -1123,8 +1226,7 @@ function openAddJobModal() {
   dom.inputArrival.value = String(getSchedulerState().currentTick);
   populateParentOptions(null, null);
   syncJobModalCopy();
-  dom.addJobModal.classList.remove('hidden');
-  dom.inputJobName.focus();
+  openAccessibleModal(dom.addJobModal, dom.inputJobName);
 }
 
 function openEditJobModal(pid) {
@@ -1142,23 +1244,59 @@ function openEditJobModal(pid) {
   dom.inputIoBurst.value = String(pcb.ioBurst);
   populateParentOptions(pcb.pid, pcb.ppid);
   syncJobModalCopy();
-  dom.addJobModal.classList.remove('hidden');
-  dom.inputJobName.focus();
+  openAccessibleModal(dom.addJobModal, dom.inputJobName);
 }
 
 function closeAddJobModal() {
   editingPid = null;
   dom.inputArrival.disabled = false;
-  dom.addJobModal.classList.add('hidden');
+  closeAccessibleModal(dom.addJobModal);
   dom.addJobForm.reset();
 }
 
+function renderGuideModal() {
+  if (!dom.guideModal || !dom.guideMappingBody) return;
+  const isStory = currentViewMode === 'story';
+
+  if (dom.guideModalTitle) {
+    dom.guideModalTitle.textContent = isStory
+      ? 'Story Mode vs. OS Mode — Scenario Mapping'
+      : 'OS Mode vs. Story Mode — Scenario Mapping';
+  }
+
+  dom.guideMappingBody.innerHTML = `
+    <div class="table-wrap">
+      <table class="data-table data-table-compact">
+        <thead>
+          <tr>
+            <th>Story Mode (Tire Workshop)</th>
+            <th>OS Mode (Operating System)</th>
+            <th>What It Represents</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DUAL_VIEW_TERMINOLOGY.map(
+            ([storyTerm, osTerm, desc]) => `
+              <tr>
+                <td>${escapeHtml(storyTerm)}</td>
+                <td>${escapeHtml(osTerm)}</td>
+                <td>${escapeHtml(desc)}</td>
+              </tr>`
+          ).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 function openGuideModal() {
-  dom.guideModal.classList.remove('hidden');
+  closeMobileNav(false);
+  renderGuideModal();
+  openAccessibleModal(dom.guideModal, dom.closeGuideModalBtn);
 }
 
 function closeGuideModal() {
-  dom.guideModal.classList.add('hidden');
+  closeAccessibleModal(dom.guideModal);
 }
 
 function openPcbModal(pid) {
@@ -1179,12 +1317,30 @@ function openPcbModal(pid) {
     })
     .join('');
 
+  const threads = Array.isArray(pcb.threads) ? pcb.threads : [];
+  const activeThreadCount = threads.filter((t) => t.state !== 'Terminated').length;
+  const threadsHtml =
+    threads.length > 0
+      ? threads
+          .map((tcb) => {
+            const tidLabel = isStory ? `Task #${tcb.tid}` : `T${tcb.tid}`;
+            return `
+            <div class="history-item">
+              <span class="tabular text-orange">${tidLabel}</span>
+              <span><strong>${escapeHtml(tcb.name)}</strong> · <span class="state-label ${getStateClass(tcb.state)}">${escapeHtml(formatStateLabel(tcb.state))}</span> · <span class="tabular muted-note">SP:${tcb.privateRegisters.SP} PC:${tcb.privateRegisters.PC}</span></span>
+            </div>`;
+          })
+          .join('')
+      : `<div class="muted-note">${isStory ? 'No mechanic tasks attached.' : 'No TCB threads attached.'}</div>`;
+
   dom.pcbModalBody.innerHTML = `
-    <div class="pcb-kv"><span>${isStory ? 'Job ID / Parent Job' : 'PID / PPID'}</span><strong class="tabular">${pcb.pid} / ${pcb.ppid ?? 'None'}</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Job ID' : 'PID'}</span><strong class="tabular">${formatId(pcb.pid)}</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Parent Job (PPID)' : 'Parent Process (PPID)'}</span><strong class="tabular">${escapeHtml(formatPpidDisplay(pcb.ppid, true))}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Shop Status' : 'Current State'}</span><strong class="${getStateClass(pcb.state)}">${escapeHtml(formatStateLabel(pcb.state))}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Vehicle Job' : 'Process Name'}</span><strong>${escapeHtml(pcb.name)}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Service Type' : 'Workload Type'}</span><strong>${escapeHtml(pcb.serviceType)}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Priority / Check-In' : 'Priority / Arrival'}</span><strong class="tabular">P${pcb.priority} / Tick ${pcb.arrivalTime}</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Configured Bay / Equip' : 'Configured CPU / I/O Burst'}</span><strong class="tabular">${pcb.cpuBurst}t / ${pcb.ioBurst}t</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Bay / Equip Remaining' : 'CPU / I/O Remaining'}</span><strong class="tabular">${pcb.remainingTime}t / ${pcb.ioRemaining}t</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Queue Wait / Shop Turnaround' : 'Wait / Turnaround'}</span><strong class="tabular">${pcb.waitingTime}t / ${pcb.completionTime !== null ? pcb.completionTime - pcb.arrivalTime : '-'}t</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Bay Response Time' : 'Response Time'}</span><strong class="tabular">${pcb.startTime !== null ? pcb.startTime - pcb.arrivalTime : '-'}t</strong></div>
@@ -1193,17 +1349,21 @@ function openPcbModal(pid) {
       <strong class="tabular">PC: ${pcb.registers.PC} · ACC: ${pcb.registers.ACC} · IR: ${pcb.registers.IR} · SP: ${pcb.registers.SP}</strong>
     </div>
     <div class="pcb-kv pcb-kv-full">
+      <span>${isStory ? `Mechanic Tasks Summary (${threads.length} total, ${activeThreadCount} active)` : `Thread Control Blocks (TCB Summary: ${threads.length} total, ${activeThreadCount} active)`}</span>
+      <div class="history-list">${threadsHtml}</div>
+    </div>
+    <div class="pcb-kv pcb-kv-full">
       <span>${isStory ? 'Shop Service Lifecycle History' : '5-State Lifecycle History'}</span>
       <div class="history-list">${historyHtml}</div>
     </div>
   `;
 
-  dom.pcbModal.classList.remove('hidden');
+  openAccessibleModal(dom.pcbModal, dom.closePcbModalBtn);
 }
 
 function closePcbModal() {
   inspectedModalPid = null;
-  dom.pcbModal.classList.add('hidden');
+  closeAccessibleModal(dom.pcbModal);
 }
 
 function pauseSimulation() {
@@ -1307,7 +1467,7 @@ function renderThreadsPanel() {
     `;
   } else {
     dom.sharedResourcesText.innerHTML = `
-      <strong>Shared:</strong> Process PID ${selectedPcb.pid} (${escapeHtml(selectedPcb.name)}) · Memory <span class="tabular">${shared.memorySpace}</span> · Mutexes: ${escapeHtml(shared.equipmentLocks)}
+      <strong>Shared:</strong> Process PID ${formatPidNumber(selectedPcb.pid)} (${escapeHtml(selectedPcb.name)}) · Memory <span class="tabular">${shared.memorySpace}</span> · Mutexes: ${escapeHtml(shared.equipmentLocks)}
     `;
   }
 
@@ -1463,12 +1623,15 @@ function renderBenchmarkSuite() {
   const isStory = currentViewMode === 'story';
   const selectedWorkload = dom.benchmarkWorkloadSelect.value;
   const selectedMetric = dom.benchmarkMetricSelect.value;
-  const { results, tests, quantum, allPassed } = lastBenchmarkSuite;
+  const { results, tests, quantum, allPassed, officialJobCounts } = lastBenchmarkSuite;
+  const countsSummary = officialJobCounts
+    ? `${officialJobCounts.balanced}/${officialJobCounts['cpu-heavy']}/${officialJobCounts['io-heavy']}`
+    : '4/3/3';
 
   const passBadge = allPassed
     ? isStory
-      ? '12/12 Verified · Shop Isolation OK'
-      : '12/12 Verified · Engine Isolation OK'
+      ? `12/12 Verified · Official Presets (${countsSummary})`
+      : `12/12 Verified · Official Presets (${countsSummary})`
     : 'Verification Issues Detected';
   dom.benchmarkMetaStatus.textContent = `Q=${quantum} · ${results.length} runs · ${passBadge}`;
   dom.benchmarkMetaStatus.className = `panel-meta tabular ${allPassed ? 'text-green' : 'text-red'}`;
@@ -1515,23 +1678,88 @@ function renderBenchmarkSuite() {
     </article>
   `;
 
-  // Chart legend
-  dom.chartAlgoLegend.innerHTML = BENCHMARK_ALGORITHMS.map(
+  const scopeTitle =
+    selectedWorkload === 'all'
+      ? isStory
+        ? 'All 3 Shop Workloads'
+        : 'All 3 Workloads'
+      : getWorkloadDisplayName(selectedWorkload);
+
+  // Update Launcher Card Previews
+  const minUtil = Math.min(...activeRows.map((r) => r.cpuUtilization));
+  const maxUtil = Math.max(...activeRows.map((r) => r.cpuUtilization));
+  if (dom.benchUtilPreview) {
+    dom.benchUtilPreview.textContent = isStory
+      ? `${scopeTitle}: Bay utilization ${minUtil.toFixed(1)}%–${maxUtil.toFixed(1)}% + ${getMetricDisplayLabel(selectedMetric)}.`
+      : `${scopeTitle}: CPU utilization ${minUtil.toFixed(1)}%–${maxUtil.toFixed(1)}% + ${getMetricDisplayLabel(selectedMetric)}.`;
+  }
+  if (dom.benchProfilePreview) {
+    dom.benchProfilePreview.textContent = isStory
+      ? `Comparing Wait, Turnaround, Response & Changeovers on ${highlightTitlePrefix}.`
+      : `Comparing Wait, Turnaround, Response & Context Switches on ${highlightTitlePrefix}.`;
+  }
+  if (dom.benchResultsPreview) {
+    dom.benchResultsPreview.textContent = `${activeRows.length} verified runs (${scopeTitle}, RR Q=${quantum}, Fixed Presets).`;
+  }
+  if (dom.benchResultsModalMeta) {
+    dom.benchResultsModalMeta.textContent = isStory
+      ? `Showing ${activeRows.length} verified runs on Official Fixed Presets (${countsSummary} vehicles) · ${scopeTitle} · RR Bay Turn Q=${quantum}. Live custom edits & Rush Hour jobs are isolated.`
+      : `Showing ${activeRows.length} verified runs on Official Fixed Presets (${countsSummary} processes) · ${scopeTitle} · RR Quantum Q=${quantum}. Live custom PCBs & burst runs are isolated.`;
+  }
+
+  // Chart legends (rendered in both Utilization and Multi-Metric modals)
+  const legendMarkup = BENCHMARK_ALGORITHMS.map(
     (algo) => `
       <span class="chart-legend-item">
         <span class="chart-swatch" style="background-color: ${ALGO_COLORS[algo]};"></span>
         <span>${algo === 'RR' ? `RR (Q=${quantum})` : algo}</span>
       </span>`
   ).join('');
+  dom.chartAlgoLegend.innerHTML = legendMarkup;
+  if (dom.chartProfileLegend) {
+    dom.chartProfileLegend.innerHTML = legendMarkup;
+  }
 
-  // Left Chart: Selected Metric across selected workload(s)
-  dom.chartMetricTitle.textContent = `${getMetricDisplayLabel(selectedMetric)} — ${
-    selectedWorkload === 'all'
-      ? isStory
-        ? 'All 3 Shop Workloads'
-        : 'All 3 Workloads'
-      : getWorkloadDisplayName(selectedWorkload)
-  }`;
+  // Modal 1 Left Chart: Dedicated Bay / CPU Utilization (%) across filtered workloads
+  if (dom.chartUtilTitle) {
+    dom.chartUtilTitle.textContent = `${VIEW_LABELS[currentViewMode].metricOptUtil} — ${scopeTitle}`;
+  }
+  if (dom.benchmarkUtilChart) {
+    dom.benchmarkUtilChart.innerHTML = filteredWorkloads
+      .map((wk) => {
+        const wkRows = results.filter((r) => r.workloadKey === wk);
+        const barsHtml = wkRows
+          .map((row) => {
+            const val = Number(row.cpuUtilization) || 0;
+            const pct = Math.max(4, Math.min(100, val));
+            const algoText = row.algorithm === 'RR' ? `RR (Q=${quantum})` : row.algorithm;
+            return `
+              <div class="bar-row" title="${escapeHtml(getWorkloadDisplayName(wk))} · ${algoText}: ${val.toFixed(1)}% (${row.busyTicks}/${row.totalTicks} ticks)">
+                <span class="bar-label tabular">${algoText}</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: ${pct.toFixed(1)}%; background-color: ${ALGO_COLORS[row.algorithm]};"></div>
+                </div>
+                <span class="bar-value tabular">${val.toFixed(1)}%</span>
+              </div>`;
+          })
+          .join('');
+
+        return `
+          <div class="chart-group">
+            <div class="chart-group-title">${escapeHtml(getWorkloadDisplayName(wk))}</div>
+            ${barsHtml}
+          </div>`;
+      })
+      .join('');
+  }
+
+  // Modal 1 Right Chart: Selected Metric across selected workload(s)
+  dom.chartMetricTitle.textContent = `${getMetricDisplayLabel(selectedMetric)} — ${scopeTitle}`;
+  if (dom.chartMetricSubtitle) {
+    dom.chartMetricSubtitle.textContent = isStory
+      ? 'Driven by Chart Metric selector'
+      : 'Synced with Chart Metric selector';
+  }
 
   const globalMaxMetric = Math.max(
     1,
@@ -1565,7 +1793,7 @@ function renderBenchmarkSuite() {
     })
     .join('');
 
-  // Right Chart: 4-Metric Multi-Dimension Trade-Off for highlightWorkload
+  // Modal 2 Chart: 4-Metric Multi-Dimension Trade-Off for highlightWorkload
   dom.chartProfileTitle.textContent = isStory
     ? 'Multi-Metric Shop Trade-Off Comparison'
     : 'Multi-Metric Scheduling Trade-Off Comparison';
@@ -1655,18 +1883,20 @@ function renderBenchmarkSuite() {
   // Automated Verification Test Cards
   const testDescriptions = {
     completion: {
-      title: isStory ? 'All 12 Shop Runs Completed' : 'All 12 Engine Runs Completed',
+      title: isStory
+        ? 'Official Fixed Presets (12/12 Runs)'
+        : 'Official Fixed Presets (12/12 Runs)',
       desc: (t) =>
         isStory
-          ? `${t.passedCount}/${t.totalCount} preset & algorithm shifts finished cleanly with valid metrics.`
-          : `${t.passedCount}/${t.totalCount} workload × algorithm simulations terminated with valid metrics.`,
+          ? `${t.passedCount}/${t.totalCount} runs executed on immutable baseline presets (${countsSummary} vehicles) with valid metrics.`
+          : `${t.passedCount}/${t.totalCount} runs executed on immutable baseline presets (${countsSummary} PCBs) with valid metrics.`,
     },
     deadlockFree: {
       title: isStory ? 'Zero Shop Gridlocks' : 'Zero Deadlocks Detected',
       desc: () =>
         isStory
-          ? 'All predefined workshop presets completed without circular equipment lock stalls.'
-          : 'All predefined workloads completed without circular mutex wait stalls.',
+          ? 'All official predefined workshop presets completed without circular equipment lock stalls.'
+          : 'All official predefined workloads completed without circular mutex wait stalls.',
     },
     reproducibility: {
       title: 'Deterministic Reproducibility',
@@ -1679,8 +1909,8 @@ function renderBenchmarkSuite() {
       title: isStory ? 'Live Shop State Isolated' : 'Live Simulator State Isolated',
       desc: () =>
         isStory
-          ? 'Benchmark suite restored active service bay, waiting lines, and vehicle records untouched.'
-          : 'Benchmark suite restored active CPU tick, queues, and PCB table untouched.',
+          ? 'Custom edits, Rush Hour vehicles, bay queues, and manager logs remained untouched.'
+          : 'Custom PCBs, burst jobs, CPU queues, mutex locks, and kernel logs remained untouched.',
     },
   };
 
@@ -1725,6 +1955,7 @@ function resetSimulationStateOnly() {
 }
 
 function renderAll() {
+  syncToolbarAndWorkloadDisplay();
   renderSummaryAndMetrics();
   renderQueuesAndBay();
   renderGanttChart();
@@ -1737,7 +1968,124 @@ function renderAll() {
   updatePlaybackButtons();
 }
 
+function setMobileNavOpen(isOpen) {
+  if (!dom.topNavMenu || !dom.navToggleBtn) return;
+  dom.topNavMenu.classList.toggle('is-open', isOpen);
+  dom.navToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  const iconEl = dom.navToggleBtn.querySelector('.nav-toggle-icon');
+  const labelEl = dom.navToggleBtn.querySelector('.nav-toggle-label');
+  if (iconEl) iconEl.innerHTML = isOpen ? '&#10005;' : '&#9776;';
+  if (labelEl) labelEl.textContent = isOpen ? 'Close' : 'Menu';
+}
+
+function closeMobileNav(returnFocus = false) {
+  if (!dom.topNavMenu || !dom.topNavMenu.classList.contains('is-open')) return;
+  setMobileNavOpen(false);
+  if (returnFocus && dom.navToggleBtn) {
+    dom.navToggleBtn.focus();
+  }
+}
+
+let navScrollLockUntil = 0;
+
+function getNavTargetId(navEl) {
+  if (!navEl) return '';
+  if (navEl.dataset && navEl.dataset.navTarget) {
+    return navEl.dataset.navTarget;
+  }
+  const href = navEl.getAttribute('href') || '';
+  return href.startsWith('#') ? href.slice(1) : href;
+}
+
+function setActiveNavTarget(targetId) {
+  if (!targetId) return;
+  const normalized = targetId.startsWith('#') ? targetId.slice(1) : targetId;
+  for (const link of dom.navLinks) {
+    const isMatch = getNavTargetId(link) === normalized;
+    link.classList.toggle('is-active', isMatch);
+    if (isMatch) {
+      link.setAttribute('aria-current', 'location');
+    } else {
+      link.removeAttribute('aria-current');
+    }
+  }
+}
+
+function navigateToSection(targetId) {
+  if (!targetId) return;
+  setActiveNavTarget(targetId);
+  closeMobileNav(false);
+  navScrollLockUntil = Date.now() + 700;
+
+  const targetSection = document.getElementById(targetId);
+  if (!targetSection) return;
+
+  window.requestAnimationFrame(() => {
+    const headerHeight = dom.topHeader ? dom.topHeader.getBoundingClientRect().height : 0;
+    const targetTop =
+      targetSection.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+    window.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: 'smooth',
+    });
+  });
+}
+
+function syncActiveNavOnScroll() {
+  if (dom.navLinks.length === 0 || Date.now() < navScrollLockUntil) return;
+  const headerOffset = dom.topHeader ? dom.topHeader.getBoundingClientRect().height + 24 : 140;
+  let activeId = getNavTargetId(dom.navLinks[0]);
+  let bestTop = -Infinity;
+
+  for (const link of dom.navLinks) {
+    const targetId = getNavTargetId(link);
+    if (!targetId) continue;
+    const section = document.getElementById(targetId);
+    if (!section) continue;
+    const rectTop = section.getBoundingClientRect().top;
+    if (rectTop <= headerOffset && rectTop > bestTop) {
+      bestTop = rectTop;
+      activeId = targetId;
+    }
+  }
+
+  setActiveNavTarget(activeId);
+}
+
 function bindEvents() {
+  if (dom.navToggleBtn && dom.topNavMenu) {
+    dom.navToggleBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const currentlyOpen = dom.topNavMenu.classList.contains('is-open');
+      setMobileNavOpen(!currentlyOpen);
+    });
+
+    dom.topNavMenu.addEventListener('click', (event) => {
+      const link = event.target.closest('.nav-link');
+      if (!link) return;
+      navigateToSection(getNavTargetId(link));
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (
+      dom.topHeader &&
+      dom.topNavMenu &&
+      dom.topNavMenu.classList.contains('is-open') &&
+      !dom.topHeader.contains(event.target)
+    ) {
+      closeMobileNav(false);
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 860) {
+      closeMobileNav(false);
+    }
+  });
+
+  window.addEventListener('scroll', syncActiveNavOnScroll, { passive: true });
+
   dom.dualViewToggle.addEventListener('click', () => {
     currentViewMode = currentViewMode === 'story' ? 'os' : 'story';
     applyDualViewLabels();
@@ -1760,12 +2108,14 @@ function bindEvents() {
   dom.algoSelect.addEventListener('change', () => {
     setAlgorithm(dom.algoSelect.value);
     updateQuantumVisibility();
+    syncLiveSnapshot();
     renderSummaryAndMetrics();
   });
 
   dom.quantumInput.addEventListener('change', () => {
     setTimeQuantum(dom.quantumInput.value);
     dom.quantumInput.value = String(getSchedulerState().timeQuantum);
+    syncLiveSnapshot();
   });
 
   dom.speedSelect.addEventListener('change', () => {
@@ -1773,6 +2123,10 @@ function bindEvents() {
       pauseSimulation();
       startSimulation();
     }
+  });
+
+  dom.presetSelect.addEventListener('change', () => {
+    resetAll(dom.presetSelect.value);
   });
 
   dom.btnLoadPreset.addEventListener('click', () => {
@@ -1814,12 +2168,45 @@ function bindEvents() {
 
   dom.openGuideBtn.addEventListener('click', openGuideModal);
   dom.closeGuideModalBtn.addEventListener('click', closeGuideModal);
-  dom.ackGuideBtn.addEventListener('click', closeGuideModal);
 
   dom.openAddJobBtn.addEventListener('click', openAddJobModal);
   dom.closeAddJobBtn.addEventListener('click', closeAddJobModal);
   dom.cancelAddJobBtn.addEventListener('click', closeAddJobModal);
   dom.closePcbModalBtn.addEventListener('click', closePcbModal);
+
+  if (dom.openBenchUtilBtn) {
+    dom.openBenchUtilBtn.addEventListener('click', () => {
+      renderBenchmarkSuite();
+      openAccessibleModal(dom.benchmarkUtilModal, dom.closeBenchUtilBtn);
+    });
+  }
+  if (dom.closeBenchUtilBtn) {
+    dom.closeBenchUtilBtn.addEventListener('click', () =>
+      closeAccessibleModal(dom.benchmarkUtilModal)
+    );
+  }
+  if (dom.openBenchProfileBtn) {
+    dom.openBenchProfileBtn.addEventListener('click', () => {
+      renderBenchmarkSuite();
+      openAccessibleModal(dom.benchmarkProfileModal, dom.closeBenchProfileBtn);
+    });
+  }
+  if (dom.closeBenchProfileBtn) {
+    dom.closeBenchProfileBtn.addEventListener('click', () =>
+      closeAccessibleModal(dom.benchmarkProfileModal)
+    );
+  }
+  if (dom.openBenchResultsBtn) {
+    dom.openBenchResultsBtn.addEventListener('click', () => {
+      renderBenchmarkSuite();
+      openAccessibleModal(dom.benchmarkResultsModal, dom.closeBenchResultsBtn);
+    });
+  }
+  if (dom.closeBenchResultsBtn) {
+    dom.closeBenchResultsBtn.addEventListener('click', () =>
+      closeAccessibleModal(dom.benchmarkResultsModal)
+    );
+  }
 
   dom.addJobModal.addEventListener('click', (event) => {
     if (event.target === dom.addJobModal) {
@@ -1839,8 +2226,36 @@ function bindEvents() {
     }
   });
 
+  if (dom.benchmarkUtilModal) {
+    dom.benchmarkUtilModal.addEventListener('click', (event) => {
+      if (event.target === dom.benchmarkUtilModal) {
+        closeAccessibleModal(dom.benchmarkUtilModal);
+      }
+    });
+  }
+
+  if (dom.benchmarkProfileModal) {
+    dom.benchmarkProfileModal.addEventListener('click', (event) => {
+      if (event.target === dom.benchmarkProfileModal) {
+        closeAccessibleModal(dom.benchmarkProfileModal);
+      }
+    });
+  }
+
+  if (dom.benchmarkResultsModal) {
+    dom.benchmarkResultsModal.addEventListener('click', (event) => {
+      if (event.target === dom.benchmarkResultsModal) {
+        closeAccessibleModal(dom.benchmarkResultsModal);
+      }
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
+    if (dom.topNavMenu && dom.topNavMenu.classList.contains('is-open')) {
+      const focusInsideNav = dom.topNavMenu.contains(document.activeElement);
+      closeMobileNav(focusInsideNav);
+    }
     if (!dom.addJobModal.classList.contains('hidden')) {
       closeAddJobModal();
     }
@@ -1849,6 +2264,21 @@ function bindEvents() {
     }
     if (!dom.guideModal.classList.contains('hidden')) {
       closeGuideModal();
+    }
+    if (dom.benchmarkUtilModal && !dom.benchmarkUtilModal.classList.contains('hidden')) {
+      closeAccessibleModal(dom.benchmarkUtilModal);
+    }
+    if (
+      dom.benchmarkProfileModal &&
+      !dom.benchmarkProfileModal.classList.contains('hidden')
+    ) {
+      closeAccessibleModal(dom.benchmarkProfileModal);
+    }
+    if (
+      dom.benchmarkResultsModal &&
+      !dom.benchmarkResultsModal.classList.contains('hidden')
+    ) {
+      closeAccessibleModal(dom.benchmarkResultsModal);
     }
   });
 
@@ -1876,6 +2306,7 @@ function bindEvents() {
       setSelectedPid(pcb.pid);
     }
 
+    markWorkloadCustomized();
     syncLiveSnapshot();
     flashKernelMode();
     closeAddJobModal();
@@ -1910,6 +2341,7 @@ function bindEvents() {
             `createProcess() -> Parent PID ${pid} spawned Child PID ${child.pid} (${child.threads.length} threads).`,
             'KERNEL'
           );
+          markWorkloadCustomized();
           syncLiveSnapshot();
           flashKernelMode();
         }
@@ -1923,6 +2355,7 @@ function bindEvents() {
       } else if (action === 'delete') {
         if (getTimeMachineInfo().isReplaying) return;
         sysDeleteProcess(pid, tick);
+        markWorkloadCustomized();
         syncLiveSnapshot();
         flashKernelMode();
         renderAll();
@@ -1942,6 +2375,7 @@ function bindEvents() {
     const input = event.target.closest('input[data-action="priority"]');
     if (!input) return;
     updateProcessPriority(Number(input.dataset.pid), input.value);
+    markWorkloadCustomized();
     syncLiveSnapshot();
     renderAll();
   });
@@ -2053,6 +2487,7 @@ function init() {
   bindEvents();
   resetAll('balanced');
   executeAndRenderBenchmarks();
+  syncActiveNavOnScroll();
 }
 
 init();
