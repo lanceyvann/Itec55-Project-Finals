@@ -1,28 +1,19 @@
 // =========================================================
-// PitStop OS - Kernel & System Call Interface (Phase 6)
+// Kernel & System Call Interface (Phase 6)
 // Manages User Mode / Kernel Mode transitions, privileged
 // system calls (integrated with TCBs and Resources), and log.
 // =========================================================
 
 import {
-  PROCESS_STATES,
-  addProcess,
-  deleteProcess,
-  getProcessByPid,
-  terminateProcess,
-  transitionProcessState,
-  updateProcess,
+  PROCESS_STATES, addProcess, deleteProcess, getProcessByPid, 
+  terminateProcess, transitionProcessState, updateProcess,
 } from './processes.js';
 import {
-  enqueueReadyProcess,
-  getSchedulerState,
-  removePidFromScheduler,
+  enqueueReadyProcess, getSchedulerState, removePidFromScheduler,
 } from './scheduler.js';
 import {
-  addThreadToProcess,
-  initializeProcessThreads,
-  joinThreadInProcess,
-  resetThreadCounter,
+  addThreadToProcess, initializeProcessThreads,
+  joinThreadInProcess, resetThreadCounter,
 } from './threads.js';
 import { releaseAllResourcesForPid } from './resources.js';
 
@@ -44,14 +35,10 @@ export function setKernelMode(mode) {
   }
 }
 
-/**
- * Appends a timestamped entry to the Kernel Event Log.
- */
+/*Appends a timestamped entry to the Kernel Event Log.*/
 export function logKernelEvent(tick, message, source = 'KERNEL') {
   kernelLogs.push({
-    tick,
-    source,
-    message,
+    tick, source, message,
   });
 
   if (kernelLogs.length > 200) {
@@ -67,10 +54,8 @@ export function clearKernelLogs() {
   kernelLogs = [];
 }
 
-/**
- * Executes a privileged kernel operation by trapping from User Mode
- * into Kernel Mode, running the callback, and returning to User Mode.
- */
+/*Executes a privileged kernel operation by trapping from User Mode 
+into Kernel Mode, running the callback, and returning to User Mode.*/
 function executeInKernelMode(tick, syscallName, fn) {
   setKernelMode(CPU_MODES.KERNEL);
   try {
@@ -81,9 +66,7 @@ function executeInKernelMode(tick, syscallName, fn) {
   }
 }
 
-/**
- * SYSCALL 1: createProcess()
- */
+/*SYSCALL 1: createProcess()*/
 export function sysCreateProcess(options, currentTick = getSchedulerState().currentTick) {
   return executeInKernelMode(currentTick, 'createProcess()', () => {
     const pcb = addProcess(options, currentTick);
@@ -98,9 +81,7 @@ export function sysCreateProcess(options, currentTick = getSchedulerState().curr
   });
 }
 
-/**
- * SYSCALL 2: terminateProcess()
- */
+/*SYSCALL 2: terminateProcess()*/
 export function sysTerminateProcess(
   pid,
   currentTick = getSchedulerState().currentTick,
@@ -131,9 +112,7 @@ export function sysTerminateProcess(
   });
 }
 
-/**
- * SYSCALL: updateProcess()
- */
+/*SYSCALL: updateProcess()*/
 export function sysUpdateProcess(
   pid,
   updates,
@@ -167,9 +146,7 @@ export function sysUpdateProcess(
   });
 }
 
-/**
- * SYSCALL: deleteProcess()
- */
+/* SYSCALL: deleteProcess()*/
 export function sysDeleteProcess(pid, currentTick = getSchedulerState().currentTick) {
   return executeInKernelMode(currentTick, 'deleteProcess()', () => {
     removePidFromScheduler(pid);
@@ -201,9 +178,7 @@ export function sysDeleteProcess(pid, currentTick = getSchedulerState().currentT
   });
 }
 
-/**
- * SYSCALL 3: createThread()
- */
+/*SYSCALL 3: createThread()*/
 export function sysCreateThread(
   pid,
   taskName = 'Extra Mechanic Inspection',
@@ -229,9 +204,7 @@ export function sysCreateThread(
   });
 }
 
-/**
- * SYSCALL 4: joinThread()
- */
+/* SYSCALL 4: joinThread()*/
 export function sysJoinThread(
   pid,
   tid = null,
@@ -257,9 +230,7 @@ export function sysJoinThread(
   });
 }
 
-/**
- * SYSCALL 5: requestIO()
- */
+/*SYSCALL 5: requestIO()*/
 export function sysRequestIO(
   pid,
   ioTicks = 2,
@@ -302,9 +273,7 @@ export function sysRequestIO(
   });
 }
 
-/**
- * SYSCALL 6: yieldProcess()
- */
+/*SYSCALL 6: yieldProcess()*/
 export function sysYieldProcess(pid, currentTick = getSchedulerState().currentTick) {
   return executeInKernelMode(currentTick, 'yieldProcess()', () => {
     const pcb = getProcessByPid(pid);
@@ -336,9 +305,7 @@ export function sysYieldProcess(pid, currentTick = getSchedulerState().currentTi
   });
 }
 
-/**
- * Resets kernel state on simulation boot / reset.
- */
+/*Resets kernel state on simulation boot / reset.*/
 export function resetKernel() {
   currentMode = CPU_MODES.USER;
   kernelLogs = [];
