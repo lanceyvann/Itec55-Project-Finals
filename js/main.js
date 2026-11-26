@@ -58,6 +58,11 @@ import {
   syncLiveSnapshot,
   triggerRushHour,
 } from './simulation.js';
+import {
+  BENCHMARK_ALGORITHMS,
+  BENCHMARK_WORKLOADS,
+  runBenchmarkSuite,
+} from './benchmark.js';
 
 // Dual View Terminology Dictionary (Story View <-> OS View)
 const VIEW_LABELS = {
@@ -67,6 +72,7 @@ const VIEW_LABELS = {
     navProcesses: 'Vehicle Records',
     navResources: 'Mechanics & Equipment',
     navKernel: 'Operations Log',
+    navBenchmark: 'Shop Benchmarks',
     labelQuantum: 'Bay Turn',
     presetBalanced: 'Balanced Shop Mix',
     presetCpuHeavy: 'Bay-Heavy (Long Services)',
@@ -119,6 +125,31 @@ const VIEW_LABELS = {
     tmTitle: 'Shift Replay (Time Machine)',
     tmDesc:
       'Scrub backward or forward through recorded shift ticks to inspect any past bay state, then click Resume Here to branch from that tick.',
+    benchmarkTitle: 'Shop Benchmark & Testing Suite',
+    benchmarkWorkloadLabel: 'Workload',
+    workloadAll: 'All Workloads (3 Presets)',
+    workloadBalanced: 'Balanced Shop Mix',
+    workloadCpuHeavy: 'Bay-Heavy (Long Services)',
+    workloadIoHeavy: 'Equipment-Heavy (Frequent Locks)',
+    benchmarkMetricLabel: 'Chart Metric',
+    metricOptWait: 'Avg Bay Line Wait',
+    metricOptTurnaround: 'Avg Shop Turnaround',
+    metricOptResponse: 'Avg Bay Response',
+    metricOptCS: 'Service Bay Changeovers',
+    metricOptUtil: 'Bay Utilization (%)',
+    benchmarkQuantumLabel: 'RR Bay Turn (Q)',
+    benchmarkRunBtn: 'Run Benchmark Suite',
+    benchmarkSummaryTitle: 'Consolidated Shop Benchmark Results (Verified Engine Execution)',
+    benchColWorkload: 'Shop Workload',
+    benchColAlgo: 'Algorithm',
+    benchColWait: 'Avg Wait',
+    benchColTurn: 'Avg Turnaround',
+    benchColResp: 'Avg Response',
+    benchColCS: 'Bay Changeovers',
+    benchColUtil: 'Bay Util',
+    benchColTicks: 'Shift Ticks',
+    benchColVerify: 'Verification',
+    benchTestsTitle: 'Automated Workshop Engine & Reproducibility Checks',
     pcbModalTitle: 'Vehicle Service Record',
     addJobBtn: '+ Add Vehicle Job',
     fieldJobName: 'Vehicle / Job Name',
@@ -135,6 +166,7 @@ const VIEW_LABELS = {
     navProcesses: 'PCB Table',
     navResources: 'Threads & Mutexes',
     navKernel: 'Kernel Log',
+    navBenchmark: 'Benchmarking',
     labelQuantum: 'Quantum',
     presetBalanced: 'Balanced Workload',
     presetCpuHeavy: 'CPU-Heavy (Long Bursts)',
@@ -187,6 +219,31 @@ const VIEW_LABELS = {
     tmTitle: 'Time Machine (Snapshots)',
     tmDesc:
       'Scrub backward or forward through saved simulation ticks to inspect any past state, then click Resume Here to branch a new timeline from that tick.',
+    benchmarkTitle: 'CPU Scheduling Benchmark & Testing Suite',
+    benchmarkWorkloadLabel: 'Workload',
+    workloadAll: 'All Workloads (3 Presets)',
+    workloadBalanced: 'Balanced Workload',
+    workloadCpuHeavy: 'CPU-Heavy (Long Bursts)',
+    workloadIoHeavy: 'I/O-Heavy (Frequent Locks)',
+    benchmarkMetricLabel: 'Chart Metric',
+    metricOptWait: 'Avg Waiting Time',
+    metricOptTurnaround: 'Avg Turnaround Time',
+    metricOptResponse: 'Avg Response Time',
+    metricOptCS: 'Context Switches',
+    metricOptUtil: 'CPU Utilization (%)',
+    benchmarkQuantumLabel: 'RR Quantum (Q)',
+    benchmarkRunBtn: 'Run Benchmark Suite',
+    benchmarkSummaryTitle: 'Consolidated Benchmark Results (Verified Engine Execution)',
+    benchColWorkload: 'Workload',
+    benchColAlgo: 'Algorithm',
+    benchColWait: 'Avg Waiting Time',
+    benchColTurn: 'Avg Turnaround Time',
+    benchColResp: 'Avg Response Time',
+    benchColCS: 'Context Switches',
+    benchColUtil: 'CPU Utilization',
+    benchColTicks: 'Total Ticks',
+    benchColVerify: 'Verification',
+    benchTestsTitle: 'Automated Engine & Reproducibility Verification Suite',
     pcbModalTitle: 'Process Control Block (PCB) Details',
     addJobBtn: '+ Add Process',
     fieldJobName: 'Process Name',
@@ -634,6 +691,29 @@ const dom = {
   btnTmNext: document.getElementById('btn-tm-next'),
   tmStatusText: document.getElementById('tm-status-text'),
   btnTmResume: document.getElementById('btn-tm-resume'),
+  benchmarkMetaStatus: document.getElementById('benchmark-meta-status'),
+  benchmarkWorkloadSelect: document.getElementById('benchmark-workload-select'),
+  benchmarkMetricSelect: document.getElementById('benchmark-metric-select'),
+  benchmarkQuantumInput: document.getElementById('benchmark-quantum-input'),
+  btnRunBenchmark: document.getElementById('btn-run-benchmark'),
+  benchmarkHighlights: document.getElementById('benchmark-highlights'),
+  chartMetricTitle: document.getElementById('chart-metric-title'),
+  chartAlgoLegend: document.getElementById('chart-algo-legend'),
+  benchmarkMetricChart: document.getElementById('benchmark-metric-chart'),
+  chartProfileTitle: document.getElementById('chart-profile-title'),
+  chartProfileSubtitle: document.getElementById('chart-profile-subtitle'),
+  benchmarkProfileChart: document.getElementById('benchmark-profile-chart'),
+  benchmarkTableBody: document.getElementById('benchmark-table-body'),
+  benchmarkTestStrip: document.getElementById('benchmark-test-strip'),
+};
+
+let lastBenchmarkSuite = null;
+
+const ALGO_COLORS = {
+  FCFS: 'var(--accent-orange)',
+  SJF: 'var(--color-green)',
+  RR: 'var(--color-blue)',
+  PRIORITY: 'var(--color-amber)',
 };
 
 let kernelFlashTimer = null;
@@ -1353,6 +1433,282 @@ function renderTimeMachine() {
   }
 }
 
+function getWorkloadDisplayName(workloadKey) {
+  const dict = VIEW_LABELS[currentViewMode];
+  if (workloadKey === 'balanced') return dict.workloadBalanced;
+  if (workloadKey === 'cpu-heavy') return dict.workloadCpuHeavy;
+  if (workloadKey === 'io-heavy') return dict.workloadIoHeavy;
+  return workloadKey;
+}
+
+function formatBenchmarkMetricValue(metricKey, value) {
+  if (metricKey === 'contextSwitches') return `${value}`;
+  if (metricKey === 'cpuUtilization') return `${value.toFixed(1)}%`;
+  return `${value.toFixed(2)} t`;
+}
+
+function getMetricDisplayLabel(metricKey) {
+  const dict = VIEW_LABELS[currentViewMode];
+  if (metricKey === 'avgWaiting') return dict.metricOptWait;
+  if (metricKey === 'avgTurnaround') return dict.metricOptTurnaround;
+  if (metricKey === 'avgResponse') return dict.metricOptResponse;
+  if (metricKey === 'contextSwitches') return dict.metricOptCS;
+  if (metricKey === 'cpuUtilization') return dict.metricOptUtil;
+  return metricKey;
+}
+
+function renderBenchmarkSuite() {
+  if (!lastBenchmarkSuite) return;
+
+  const isStory = currentViewMode === 'story';
+  const selectedWorkload = dom.benchmarkWorkloadSelect.value;
+  const selectedMetric = dom.benchmarkMetricSelect.value;
+  const { results, tests, quantum, allPassed } = lastBenchmarkSuite;
+
+  const passBadge = allPassed
+    ? isStory
+      ? '12/12 Verified · Shop Isolation OK'
+      : '12/12 Verified · Engine Isolation OK'
+    : 'Verification Issues Detected';
+  dom.benchmarkMetaStatus.textContent = `Q=${quantum} · ${results.length} runs · ${passBadge}`;
+  dom.benchmarkMetaStatus.className = `panel-meta tabular ${allPassed ? 'text-green' : 'text-red'}`;
+
+  // Determine active workload subset for summary table & highlights
+  const filteredWorkloads =
+    selectedWorkload === 'all' ? BENCHMARK_WORKLOADS : [selectedWorkload];
+  const activeRows = results.filter((r) => filteredWorkloads.includes(r.workloadKey));
+
+  // Highlight cards: show winners for the selected workload (or Balanced when All is chosen)
+  const highlightWorkload = selectedWorkload === 'all' ? 'balanced' : selectedWorkload;
+  const highlightRows = results.filter((r) => r.workloadKey === highlightWorkload);
+  const highlightTitlePrefix = getWorkloadDisplayName(highlightWorkload);
+
+  const pickMin = (rows, key) =>
+    [...rows].sort((a, b) => a[key] - b[key])[0];
+
+  const bestWait = pickMin(highlightRows, 'avgWaiting');
+  const bestTurn = pickMin(highlightRows, 'avgTurnaround');
+  const bestResp = pickMin(highlightRows, 'avgResponse');
+  const bestCS = pickMin(highlightRows, 'contextSwitches');
+
+  const csLabel = isStory ? 'Fewest Bay Changeovers' : 'Fewest Context Switches';
+  const waitTitle = isStory ? 'Lowest Avg Wait' : 'Lowest Avg Waiting Time';
+  const turnTitle = isStory ? 'Lowest Avg Turnaround' : 'Lowest Avg Turnaround Time';
+  const respTitle = isStory ? 'Lowest Avg Response' : 'Lowest Avg Response Time';
+
+  dom.benchmarkHighlights.innerHTML = `
+    <article class="metric-cell">
+      <span>${waitTitle} (${escapeHtml(highlightTitlePrefix)})</span>
+      <strong class="tabular text-green">${bestWait ? `${bestWait.algorithm} · ${bestWait.avgWaiting.toFixed(2)} t` : '-'}</strong>
+    </article>
+    <article class="metric-cell">
+      <span>${turnTitle} (${escapeHtml(highlightTitlePrefix)})</span>
+      <strong class="tabular text-green">${bestTurn ? `${bestTurn.algorithm} · ${bestTurn.avgTurnaround.toFixed(2)} t` : '-'}</strong>
+    </article>
+    <article class="metric-cell">
+      <span>${respTitle} (${escapeHtml(highlightTitlePrefix)})</span>
+      <strong class="tabular text-green">${bestResp ? `${bestResp.algorithm} · ${bestResp.avgResponse.toFixed(2)} t` : '-'}</strong>
+    </article>
+    <article class="metric-cell">
+      <span>${csLabel} (${escapeHtml(highlightTitlePrefix)})</span>
+      <strong class="tabular text-blue">${bestCS ? `${bestCS.algorithm} · ${bestCS.contextSwitches}` : '-'}</strong>
+    </article>
+  `;
+
+  // Chart legend
+  dom.chartAlgoLegend.innerHTML = BENCHMARK_ALGORITHMS.map(
+    (algo) => `
+      <span class="chart-legend-item">
+        <span class="chart-swatch" style="background-color: ${ALGO_COLORS[algo]};"></span>
+        <span>${algo === 'RR' ? `RR (Q=${quantum})` : algo}</span>
+      </span>`
+  ).join('');
+
+  // Left Chart: Selected Metric across selected workload(s)
+  dom.chartMetricTitle.textContent = `${getMetricDisplayLabel(selectedMetric)} — ${
+    selectedWorkload === 'all'
+      ? isStory
+        ? 'All 3 Shop Workloads'
+        : 'All 3 Workloads'
+      : getWorkloadDisplayName(selectedWorkload)
+  }`;
+
+  const globalMaxMetric = Math.max(
+    1,
+    ...activeRows.map((r) => Number(r[selectedMetric]) || 0)
+  );
+
+  dom.benchmarkMetricChart.innerHTML = filteredWorkloads
+    .map((wk) => {
+      const wkRows = results.filter((r) => r.workloadKey === wk);
+      const barsHtml = wkRows
+        .map((row) => {
+          const val = Number(row[selectedMetric]) || 0;
+          const pct = Math.max(4, Math.min(100, (val / globalMaxMetric) * 100));
+          const algoText = row.algorithm === 'RR' ? `RR (Q=${quantum})` : row.algorithm;
+          return `
+            <div class="bar-row" title="${escapeHtml(getWorkloadDisplayName(wk))} · ${algoText}: ${formatBenchmarkMetricValue(selectedMetric, val)}">
+              <span class="bar-label tabular">${algoText}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${pct.toFixed(1)}%; background-color: ${ALGO_COLORS[row.algorithm]};"></div>
+              </div>
+              <span class="bar-value tabular">${formatBenchmarkMetricValue(selectedMetric, val)}</span>
+            </div>`;
+        })
+        .join('');
+
+      return `
+        <div class="chart-group">
+          <div class="chart-group-title">${escapeHtml(getWorkloadDisplayName(wk))}</div>
+          ${barsHtml}
+        </div>`;
+    })
+    .join('');
+
+  // Right Chart: 4-Metric Multi-Dimension Trade-Off for highlightWorkload
+  dom.chartProfileTitle.textContent = isStory
+    ? 'Multi-Metric Shop Trade-Off Comparison'
+    : 'Multi-Metric Scheduling Trade-Off Comparison';
+  dom.chartProfileSubtitle.textContent =
+    selectedWorkload === 'all'
+      ? `${highlightTitlePrefix} (${isStory ? 'filter workload above to switch' : 'select workload to switch'})`
+      : highlightTitlePrefix;
+
+  const profileMetrics = [
+    { key: 'avgWaiting', label: VIEW_LABELS[currentViewMode].metricOptWait },
+    { key: 'avgTurnaround', label: VIEW_LABELS[currentViewMode].metricOptTurnaround },
+    { key: 'avgResponse', label: VIEW_LABELS[currentViewMode].metricOptResponse },
+    { key: 'contextSwitches', label: VIEW_LABELS[currentViewMode].metricOptCS },
+  ];
+
+  dom.benchmarkProfileChart.innerHTML = profileMetrics
+    .map((m) => {
+      const maxVal = Math.max(1, ...highlightRows.map((r) => Number(r[m.key]) || 0));
+      const rowsHtml = highlightRows
+        .map((row) => {
+          const val = Number(row[m.key]) || 0;
+          const pct = Math.max(4, Math.min(100, (val / maxVal) * 100));
+          const algoText = row.algorithm === 'RR' ? `RR (Q=${quantum})` : row.algorithm;
+          return `
+            <div class="bar-row" title="${escapeHtml(m.label)} · ${algoText}: ${formatBenchmarkMetricValue(m.key, val)}">
+              <span class="bar-label tabular">${algoText}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${pct.toFixed(1)}%; background-color: ${ALGO_COLORS[row.algorithm]};"></div>
+              </div>
+              <span class="bar-value tabular">${formatBenchmarkMetricValue(m.key, val)}</span>
+            </div>`;
+        })
+        .join('');
+
+      return `
+        <div class="chart-group">
+          <div class="chart-group-title">${escapeHtml(m.label)}</div>
+          ${rowsHtml}
+        </div>`;
+    })
+    .join('');
+
+  // Consolidated Summary Table
+  const tableChunks = [];
+  for (const wk of filteredWorkloads) {
+    const wkRows = results.filter((r) => r.workloadKey === wk);
+    const minWait = Math.min(...wkRows.map((r) => r.avgWaiting));
+    const minTurn = Math.min(...wkRows.map((r) => r.avgTurnaround));
+    const minResp = Math.min(...wkRows.map((r) => r.avgResponse));
+    const minCS = Math.min(...wkRows.map((r) => r.contextSwitches));
+    const maxUtil = Math.max(...wkRows.map((r) => r.cpuUtilization));
+
+    if (selectedWorkload === 'all') {
+      tableChunks.push(
+        `<tr class="workload-divider-row"><td colspan="9">${escapeHtml(getWorkloadDisplayName(wk))} (${wkRows[0].processCount} ${isStory ? 'vehicles' : 'processes'})</td></tr>`
+      );
+    }
+
+    for (const row of wkRows) {
+      const algoLabel =
+        row.algorithm === 'RR' ? `Round Robin (Q=${quantum})` : row.algorithm;
+      const waitBest = Math.abs(row.avgWaiting - minWait) < 1e-6;
+      const turnBest = Math.abs(row.avgTurnaround - minTurn) < 1e-6;
+      const respBest = Math.abs(row.avgResponse - minResp) < 1e-6;
+      const csBest = row.contextSwitches === minCS;
+      const utilBest = Math.abs(row.cpuUtilization - maxUtil) < 1e-6;
+
+      tableChunks.push(`
+        <tr>
+          <td>${escapeHtml(getWorkloadDisplayName(row.workloadKey))}</td>
+          <td class="tabular">
+            <span class="chart-swatch" style="background-color: ${ALGO_COLORS[row.algorithm]}; margin-right: 6px;"></span>
+            <strong>${escapeHtml(algoLabel)}</strong>
+          </td>
+          <td class="tabular ${waitBest ? 'best-metric-val' : ''}">${row.avgWaiting.toFixed(2)} t${waitBest ? '<span class="best-tag">★</span>' : ''}</td>
+          <td class="tabular ${turnBest ? 'best-metric-val' : ''}">${row.avgTurnaround.toFixed(2)} t${turnBest ? '<span class="best-tag">★</span>' : ''}</td>
+          <td class="tabular ${respBest ? 'best-metric-val' : ''}">${row.avgResponse.toFixed(2)} t${respBest ? '<span class="best-tag">★</span>' : ''}</td>
+          <td class="tabular ${csBest ? 'best-metric-val' : ''}">${row.contextSwitches}${csBest ? '<span class="best-tag">★</span>' : ''}</td>
+          <td class="tabular ${utilBest ? 'best-metric-val' : ''}">${row.cpuUtilization.toFixed(1)}%${utilBest ? '<span class="best-tag">★</span>' : ''}</td>
+          <td class="tabular">${row.totalTicks} t</td>
+          <td class="tabular ${row.verified ? 'text-green' : 'text-red'}"><strong>${row.verified ? 'PASS' : 'FAIL'}</strong></td>
+        </tr>`);
+    }
+  }
+  dom.benchmarkTableBody.innerHTML = tableChunks.join('');
+
+  // Automated Verification Test Cards
+  const testDescriptions = {
+    completion: {
+      title: isStory ? 'All 12 Shop Runs Completed' : 'All 12 Engine Runs Completed',
+      desc: (t) =>
+        isStory
+          ? `${t.passedCount}/${t.totalCount} preset & algorithm shifts finished cleanly with valid metrics.`
+          : `${t.passedCount}/${t.totalCount} workload × algorithm simulations terminated with valid metrics.`,
+    },
+    deadlockFree: {
+      title: isStory ? 'Zero Shop Gridlocks' : 'Zero Deadlocks Detected',
+      desc: () =>
+        isStory
+          ? 'All predefined workshop presets completed without circular equipment lock stalls.'
+          : 'All predefined workloads completed without circular mutex wait stalls.',
+    },
+    reproducibility: {
+      title: 'Deterministic Reproducibility',
+      desc: () =>
+        isStory
+          ? `Repeated Round Robin (Q=${quantum}) shift run produced identical wait, turnaround, and changeovers.`
+          : `Repeated Round Robin (Q=${quantum}) run produced bit-for-bit identical metrics and context switches.`,
+    },
+    isolation: {
+      title: isStory ? 'Live Shop State Isolated' : 'Live Simulator State Isolated',
+      desc: () =>
+        isStory
+          ? 'Benchmark suite restored active service bay, waiting lines, and vehicle records untouched.'
+          : 'Benchmark suite restored active CPU tick, queues, and PCB table untouched.',
+    },
+  };
+
+  dom.benchmarkTestStrip.innerHTML = tests
+    .map((t) => {
+      const meta = testDescriptions[t.id];
+      return `
+        <div class="test-check-card">
+          <div class="test-check-top">
+            <span>${escapeHtml(meta.title)}</span>
+            <span class="verify-status tabular ${t.passed ? 'text-green' : 'text-red'}">${t.passed ? 'PASS' : 'FAIL'}</span>
+          </div>
+          <p class="muted-note">${escapeHtml(meta.desc(t))}</p>
+        </div>`;
+    })
+    .join('');
+}
+
+function executeAndRenderBenchmarks() {
+  const quantumVal = Math.min(
+    10,
+    Math.max(1, Math.floor(Number(dom.benchmarkQuantumInput.value) || 2))
+  );
+  dom.benchmarkQuantumInput.value = String(quantumVal);
+  lastBenchmarkSuite = runBenchmarkSuite({ quantum: quantumVal });
+  renderBenchmarkSuite();
+}
+
 function resetAll(presetKey = currentPresetKey) {
   pauseSimulation();
   currentPresetKey = presetKey;
@@ -1377,6 +1733,7 @@ function renderAll() {
   renderResourcesPanel();
   renderKernelLog();
   renderTimeMachine();
+  renderBenchmarkSuite();
   updatePlaybackButtons();
 }
 
@@ -1669,9 +2026,25 @@ function bindEvents() {
       renderAll();
     }
   });
+
+  dom.btnRunBenchmark.addEventListener('click', () => {
+    executeAndRenderBenchmarks();
+  });
+
+  dom.benchmarkWorkloadSelect.addEventListener('change', () => {
+    renderBenchmarkSuite();
+  });
+
+  dom.benchmarkMetricSelect.addEventListener('change', () => {
+    renderBenchmarkSuite();
+  });
+
+  dom.benchmarkQuantumInput.addEventListener('change', () => {
+    executeAndRenderBenchmarks();
+  });
 }
 
-// Initialize Phase 3 Dashboard
+// Initialize Dashboard & Verified Benchmark Suite
 function init() {
   setAlgorithm(dom.algoSelect.value);
   setTimeQuantum(dom.quantumInput.value);
@@ -1679,6 +2052,7 @@ function init() {
   applyDualViewLabels();
   bindEvents();
   resetAll('balanced');
+  executeAndRenderBenchmarks();
 }
 
 init();
