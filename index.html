@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PitStop OS — Tire Service Workshop Mini-OS Simulator</title>
     <meta
       name="description"
@@ -19,24 +19,80 @@
   <body>
     <div class="app-shell">
       <!-- Top Header Bar -->
-      <header class="top-header">
-        <div class="brand-group">
-          <div class="brand-mark" aria-hidden="true">PS</div>
-          <div>
-            <h1 class="brand-title">PitStop OS</h1>
-            <p class="brand-subtitle" data-i18n="brandSubtitle">
-              Automotive Tire Service Workshop Simulator
-            </p>
+      <header class="top-header" id="top-header">
+        <div class="header-brand-row">
+          <div class="brand-group">
+            <div class="brand-mark" aria-hidden="true">PS</div>
+            <div class="brand-copy">
+              <h1 class="brand-title">PitStop OS</h1>
+              <p class="brand-subtitle" data-i18n="brandSubtitle">
+                Automotive Tire Service Workshop Simulator
+              </p>
+            </div>
           </div>
+
+          <button
+            type="button"
+            id="nav-toggle-btn"
+            class="btn btn-secondary btn-sm nav-toggle-btn"
+            aria-expanded="false"
+            aria-controls="top-nav-menu"
+            aria-label="Toggle navigation menu"
+          >
+            <span class="nav-toggle-icon" aria-hidden="true">&#9776;</span>
+            <span class="nav-toggle-label">Menu</span>
+          </button>
         </div>
 
-        <nav class="top-nav" aria-label="Dashboard sections">
-          <a href="#overview-section" class="nav-link">Overview</a>
-          <a href="#scheduler-section" class="nav-link" data-i18n="navScheduler">Service Bay &amp; Gantt</a>
-          <a href="#pcb-section" class="nav-link" data-i18n="navProcesses">Vehicle Records</a>
-          <a href="#resources-section" class="nav-link" data-i18n="navResources">Mechanics &amp; Equipment</a>
-          <a href="#kernel-section" class="nav-link" data-i18n="navKernel">Operations Log</a>
-          <a href="#benchmark-section" class="nav-link" data-i18n="navBenchmark">Shop Benchmarks</a>
+        <nav id="top-nav-menu" class="top-nav" aria-label="Dashboard sections">
+          <button
+            type="button"
+            class="nav-link is-active"
+            data-nav-target="overview-section"
+            aria-current="location"
+          >
+            Overview
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            data-nav-target="scheduler-section"
+            data-i18n="navScheduler"
+          >
+            Service Bay &amp; Gantt
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            data-nav-target="pcb-section"
+            data-i18n="navProcesses"
+          >
+            Vehicle Records
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            data-nav-target="resources-section"
+            data-i18n="navResources"
+          >
+            Mechanics &amp; Equipment
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            data-nav-target="kernel-section"
+            data-i18n="navKernel"
+          >
+            Operations Log
+          </button>
+          <button
+            type="button"
+            class="nav-link"
+            data-nav-target="benchmark-section"
+            data-i18n="navBenchmark"
+          >
+            Shop Benchmarks
+          </button>
         </nav>
 
         <div class="header-actions">
@@ -45,13 +101,19 @@
             <span class="mode-value" id="mode-value-text">User Mode</span>
           </div>
 
-          <button type="button" id="dual-view-toggle" class="btn btn-secondary"
+          <button
+            type="button"
+            id="dual-view-toggle"
+            class="btn btn-secondary"
             title="Switch between Tire Shop Story View and Operating System View"
           >
             View: Story Mode
           </button>
 
-          <button type="button" id="open-guide-btn" class="btn btn-secondary"
+          <button
+            type="button"
+            id="open-guide-btn"
+            class="btn btn-secondary"
             title="Open Story Mode & OS Mode Concept Guide"
           >
             Guide
@@ -86,9 +148,12 @@
           <label class="field-inline" for="quantum-input" id="quantum-wrapper">
             <span data-i18n="labelQuantum">Bay Turn</span>
             <input
-              type="number" id="quantum-input"
-              class="number-input" min="1"
-              max="10" value="2"
+              type="number"
+              id="quantum-input"
+              class="number-input"
+              min="1"
+              max="10"
+              value="2"
             />
           </label>
 
@@ -113,11 +178,18 @@
           </label>
           <button type="button" id="btn-load-preset" class="btn btn-secondary">Load</button>
           <button
-            type="button" id="btn-rush-hour" class="btn btn-secondary"
-            data-i18n="rushHourBtn" title="Spawn 2–4 predefined vehicle service jobs"
+            type="button"
+            id="btn-rush-hour"
+            class="btn btn-secondary"
+            data-i18n="rushHourBtn"
+            title="Spawn 2–4 predefined vehicle service jobs"
           >
             Rush Hour
           </button>
+          <div class="tick-counter" id="active-workload-readout" title="Active simulation workload">
+            <span data-i18n="activeWorkloadLabel">Workload</span>
+            <strong id="active-workload-display">Balanced Shop Mix</strong>
+          </div>
           <div class="tick-counter">
             <span>Tick</span>
             <strong id="tick-display" class="tabular">0</strong>
@@ -246,14 +318,19 @@
                   <div class="sub-label" data-i18n="whyTitle">"Why?" Service Bay Assignment Explainer</div>
                   <div class="why-controls">
                     <select
-                      id="why-decision-select" class="select-input select-sm"
-                      aria-label="Select scheduling decision tick" disabled
+                      id="why-decision-select"
+                      class="select-input select-sm"
+                      aria-label="Select scheduling decision tick"
+                      disabled
                     >
                       <option value="">No assignments yet</option>
                     </select>
                     <button
-                      type="button" id="btn-why-jump-tick"
-                      class="btn btn-secondary btn-sm" data-i18n="whyJumpBtn" disabled
+                      type="button"
+                      id="btn-why-jump-tick"
+                      class="btn btn-secondary btn-sm"
+                      data-i18n="whyJumpBtn"
+                      disabled
                     >
                       View in Shift Replay
                     </button>
@@ -340,8 +417,10 @@
                       Simulate Gridlock
                     </button>
                     <button
-                      type="button" id="btn-resolve-deadlock"
-                      class="btn btn-danger-outline btn-sm" disabled
+                      type="button"
+                      id="btn-resolve-deadlock"
+                      class="btn btn-danger-outline btn-sm"
+                      disabled
                     >
                       Resolve
                     </button>
@@ -376,7 +455,7 @@
                   <th data-i18n="colPcbState">Shop Status</th>
                   <th data-i18n="colPriority">Priority</th>
                   <th data-i18n="colArrival">Check-In</th>
-                  <th data-i18n="colBurst">Service / Equip</th>
+                  <th class="col-center" data-i18n="colBurst">Service / Equip</th>
                   <th data-i18n="colRemaining">Remaining</th>
                   <th>Actions</th>
                 </tr>
@@ -443,8 +522,13 @@
                 Prev Tick
               </button>
               <input
-                type="range" id="tm-slider" class="tm-slider"
-                min="0" max="0" value="0" disabled
+                type="range"
+                id="tm-slider"
+                class="tm-slider"
+                min="0"
+                max="0"
+                value="0"
+                disabled
               />
               <button type="button" id="btn-tm-next" class="btn btn-secondary btn-sm" disabled>
                 Next Tick
@@ -521,50 +605,63 @@
 
           <div id="benchmark-highlights" class="benchmark-highlights" aria-label="Algorithm comparison highlights"></div>
 
-          <div class="benchmark-charts-grid">
-            <div class="chart-card">
-              <div class="chart-card-header">
-                <div class="sub-label" id="chart-metric-title">Algorithm Comparison</div>
-                <div class="chart-legend" id="chart-algo-legend"></div>
+          <div class="benchmark-launcher-grid" aria-label="Detailed benchmark views">
+            <article class="bench-launcher-card">
+              <div class="bench-launcher-copy">
+                <h3 class="bench-launcher-title" data-i18n="benchCardUtilTitle">
+                  Bay Utilization &amp; Metric Breakdown
+                </h3>
+                <p class="muted-note" id="bench-util-preview">
+                  Inspect Bay Utilization (%) and per-workload bar comparisons across all 4 algorithms.
+                </p>
               </div>
-              <div id="benchmark-metric-chart" class="chart-groups"></div>
-            </div>
+              <button
+                type="button"
+                id="open-bench-util-btn"
+                class="btn btn-secondary"
+                data-i18n="benchOpenUtilBtn"
+              >
+                Open Bay Utilization
+              </button>
+            </article>
 
-            <div class="chart-card">
-              <div class="chart-card-header">
-                <div class="sub-label" id="chart-profile-title">Multi-Metric Trade-Off Comparison</div>
-                <span class="muted-note" id="chart-profile-subtitle">Selected workload</span>
+            <article class="bench-launcher-card">
+              <div class="bench-launcher-copy">
+                <h3 class="bench-launcher-title" data-i18n="benchCardProfileTitle">
+                  Multi-Metric Scheduling Comparison
+                </h3>
+                <p class="muted-note" id="bench-profile-preview">
+                  Compare Avg Wait, Turnaround, Response, and Changeovers side by side.
+                </p>
               </div>
-              <div id="benchmark-profile-chart" class="chart-groups"></div>
-            </div>
-          </div>
+              <button
+                type="button"
+                id="open-bench-profile-btn"
+                class="btn btn-secondary"
+                data-i18n="benchOpenProfileBtn"
+              >
+                Open Multi-Metric View
+              </button>
+            </article>
 
-          <div>
-            <div class="sub-label" data-i18n="benchmarkSummaryTitle">
-              Consolidated Benchmark Results (Verified Engine Execution)
-            </div>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th data-i18n="benchColWorkload">Workload</th>
-                    <th data-i18n="benchColAlgo">Algorithm</th>
-                    <th data-i18n="benchColWait">Avg Waiting Time</th>
-                    <th data-i18n="benchColTurn">Avg Turnaround Time</th>
-                    <th data-i18n="benchColResp">Avg Response Time</th>
-                    <th data-i18n="benchColCS">Bay Changeovers</th>
-                    <th data-i18n="benchColUtil">Bay Utilization</th>
-                    <th data-i18n="benchColTicks">Total Ticks</th>
-                    <th data-i18n="benchColVerify">Verification</th>
-                  </tr>
-                </thead>
-                <tbody id="benchmark-table-body">
-                  <tr>
-                    <td colspan="9" class="empty-cell">Run benchmark suite to evaluate algorithms.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <article class="bench-launcher-card">
+              <div class="bench-launcher-copy">
+                <h3 class="bench-launcher-title" data-i18n="benchCardResultsTitle">
+                  Consolidated Benchmark Results
+                </h3>
+                <p class="muted-note" id="bench-results-preview">
+                  Full verified 12-run summary table with best-in-class markers.
+                </p>
+              </div>
+              <button
+                type="button"
+                id="open-bench-results-btn"
+                class="btn btn-secondary"
+                data-i18n="benchOpenResultsBtn"
+              >
+                Open Benchmark Results
+              </button>
+            </article>
           </div>
 
           <div>
@@ -659,124 +756,132 @@
       </div>
     </div>
 
-    <!-- Modal: User & Concept Guide -->
+    <!-- Modal: Dual View Scenario Mapping Guide -->
     <div id="guide-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
       <div class="modal-card modal-card-wide">
         <div class="modal-header">
-          <h2 id="guide-modal-title">PitStop OS — Concept &amp; Quick Guide</h2>
+          <h2 id="guide-modal-title">Story Mode vs. OS Mode — Scenario Mapping</h2>
           <button type="button" id="close-guide-modal-btn" class="btn btn-secondary btn-sm">
             Close
           </button>
         </div>
 
-        <div class="guide-body">
-          <section class="guide-section">
-            <h3 class="guide-heading">Story Mode vs. OS Mode Terminology</h3>
-            <p class="muted-note">
-              Both views run the exact same live simulation. Clicking
-              <strong>View: Story Mode / OS Mode</strong> switches every label, "Why?" explanation,
-              log entry, lifecycle history, and status message between the PitStop workshop and pure OS views.
-            </p>
-            <div class="table-wrap">
-              <table class="data-table data-table-compact">
-                <thead>
-                  <tr>
-                    <th>Story Mode (Tire Workshop)</th>
-                    <th>OS Mode (Operating System)</th>
-                    <th>What It Represents</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Shop Floor / Shop Manager</td>
-                    <td>User Mode / Kernel Mode</td>
-                    <td>Normal execution vs. privileged manager/kernel actions</td>
-                  </tr>
-                  <tr>
-                    <td>Shop Operations Manager</td>
-                    <td>OS Kernel</td>
-                    <td>Manages jobs, waiting lines, requests, and equipment locks</td>
-                  </tr>
-                  <tr>
-                    <td>Active Service Bay</td>
-                    <td>CPU</td>
-                    <td>Executes 1 active job/process per simulation tick</td>
-                  </tr>
-                  <tr>
-                    <td>Vehicle Service Job (Job #)</td>
-                    <td>Process (PID)</td>
-                    <td>An independent work order with its own ID &amp; burst</td>
-                  </tr>
-                  <tr>
-                    <td>Vehicle Service Record</td>
-                    <td>PCB (Process Control Block)</td>
-                    <td>Stores ID, parent, status, priority, clipboard/registers &amp; history</td>
-                  </tr>
-                  <tr>
-                    <td>Mechanic Service Task (Task #)</td>
-                    <td>Thread (TCB / TID)</td>
-                    <td>Sub-tasks sharing the job's workspace/memory</td>
-                  </tr>
-                  <tr>
-                    <td>Bay Waiting Line / Equipment Wait Line</td>
-                    <td>Ready Queue / Waiting Queue</td>
-                    <td>Waiting lines for service bay dispatch or equipment/I/O</td>
-                  </tr>
-                  <tr>
-                    <td>Bay Turn</td>
-                    <td>Time Quantum (Q)</td>
-                    <td>Max ticks per turn under Round Robin before rotation</td>
-                  </tr>
-                  <tr>
-                    <td>Equipment Lock</td>
-                    <td>Mutex Lock</td>
-                    <td>Exclusive lock on Tire Changer or Wheel Balancer</td>
-                  </tr>
-                  <tr>
-                    <td>Service Bay Changeover</td>
-                    <td>Context Switch (CS)</td>
-                    <td>Switching the bay/CPU from one vehicle/process to another</td>
-                  </tr>
-                  <tr>
-                    <td>Shop Gridlock</td>
-                    <td>Deadlock</td>
-                    <td>2-job circular wait between Tire Changer &amp; Wheel Balancer</td>
-                  </tr>
-                  <tr>
-                    <td>Rush Hour</td>
-                    <td>Burst Workload</td>
-                    <td>Adds 2–4 predefined fixed-attribute jobs/processes</td>
-                  </tr>
-                  <tr>
-                    <td>Shift Replay (Checkpoints)</td>
-                    <td>Time Machine (Snapshots)</td>
-                    <td>Tick-by-tick state history scrubbing and branching</td>
-                  </tr>
-                  <tr>
-                    <td>Checked In / Waiting for Service / Undergoing Tire Service / Waiting for Equipment / Service Completed</td>
-                    <td>New / Ready / Running / Waiting / Terminated</td>
-                    <td>5-State Process Lifecycle</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
+        <div id="guide-mapping-body" class="guide-body"></div>
+      </div>
+    </div>
 
-          <section class="guide-section">
-            <h3 class="guide-heading">Quick Controls &amp; Standout Features</h3>
-            <ul class="guide-list">
-              <li><strong>Playback, Presets &amp; Rush Hour:</strong> Use <strong>Start</strong>, <strong>Pause</strong>, or <strong>Step (+1 Tick)</strong> to compare <strong>FCFS</strong>, <strong>SJF</strong>, <strong>Round Robin</strong> (using <strong>Bay Turn / Quantum</strong>), and <strong>Priority</strong> across 3 presets. Click <strong>Rush Hour / Burst Workload</strong> to spawn 2–4 predefined vehicles/processes with fixed attributes and unique IDs.</li>
-              <li><strong>Reset vs. Load Preset:</strong> Click <strong>Reset</strong> to restore timers, queues, metrics, locks, and the timeline back to Tick 0 while preserving all default and Rush Hour records. Click <strong>Load</strong> to reload the selected preset from scratch.</li>
-              <li><strong>Full Record CRUD &amp; Hierarchy:</strong> Click <strong>+ Add Vehicle Job / + Add Process</strong> to create entries, <strong>Edit</strong> to modify bursts, priority, or check-in/arrival time, <strong>+ Child</strong> to spawn a linked sub-job/child process, <strong>Terminate</strong> to halt it, or <strong>Delete</strong> to remove it.</li>
-              <li><strong>"Why?" Explainer &amp; Shift Replay / Time Machine:</strong> Click any timeline/Gantt block to inspect why that job/process was dispatched at that tick, jump straight to its checkpoint/snapshot, scrub past ticks, or click <strong>Resume Here</strong> to branch.</li>
-              <li><strong>Gridlock / Deadlock Demo &amp; Manual Actions:</strong> Click <strong>Simulate Gridlock / Run Deadlock Demo</strong> to trigger a 2-job circular wait and <strong>Resolve</strong> to recover, or use <strong>+ Mechanic Task / createThread()</strong>, <strong>Finish Task / joinThread()</strong>, <strong>Request Equipment / requestIO()</strong>, and <strong>Yield Service Bay / yieldProcess()</strong>.</li>
-              <li><strong>Benchmarking &amp; Testing Suite:</strong> Evaluates <strong>FCFS</strong>, <strong>SJF</strong>, <strong>Round Robin</strong>, and <strong>Priority</strong> across all 3 workloads using the live execution engine without altering your active session, verifying completion, reproducibility, and metric accuracy with consolidated tables and charts.</li>
-            </ul>
-          </section>
+    <!-- Modal: Benchmark Bay / CPU Utilization & Selected Metric Charts -->
+    <div
+      id="benchmark-util-modal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bench-util-modal-title"
+    >
+      <div class="modal-card modal-card-xl">
+        <div class="modal-header">
+          <h2 id="bench-util-modal-title" data-i18n="benchCardUtilTitle">
+            Bay Utilization &amp; Metric Breakdown
+          </h2>
+          <button type="button" id="close-bench-util-btn" class="btn btn-secondary btn-sm">
+            Close
+          </button>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" id="ack-guide-btn" class="btn btn-primary">Got It</button>
+        <div class="benchmark-modal-stack">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div class="sub-label" id="chart-util-title">Bay Utilization (%)</div>
+              <div class="chart-legend" id="chart-algo-legend"></div>
+            </div>
+            <div id="benchmark-util-chart" class="chart-groups"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div class="sub-label" id="chart-metric-title">Selected Metric Comparison</div>
+              <span class="muted-note" id="chart-metric-subtitle">Active chart metric</span>
+            </div>
+            <div id="benchmark-metric-chart" class="chart-groups"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Multi-Metric Scheduling Comparison -->
+    <div
+      id="benchmark-profile-modal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bench-profile-modal-title"
+    >
+      <div class="modal-card modal-card-xl">
+        <div class="modal-header">
+          <h2 id="bench-profile-modal-title" data-i18n="benchCardProfileTitle">
+            Multi-Metric Scheduling Comparison
+          </h2>
+          <button type="button" id="close-bench-profile-btn" class="btn btn-secondary btn-sm">
+            Close
+          </button>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="sub-label" id="chart-profile-title">Multi-Metric Trade-Off Comparison</div>
+              <span class="muted-note" id="chart-profile-subtitle">Selected workload</span>
+            </div>
+            <div class="chart-legend" id="chart-profile-legend"></div>
+          </div>
+          <div id="benchmark-profile-chart" class="chart-groups"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Consolidated Benchmark Results Table -->
+    <div
+      id="benchmark-results-modal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bench-results-modal-title"
+    >
+      <div class="modal-card modal-card-xl">
+        <div class="modal-header">
+          <h2 id="bench-results-modal-title" data-i18n="benchmarkSummaryTitle">
+            Consolidated Benchmark Results (Verified Engine Execution)
+          </h2>
+          <button type="button" id="close-bench-results-btn" class="btn btn-secondary btn-sm">
+            Close
+          </button>
+        </div>
+
+        <p class="muted-note" id="bench-results-modal-meta">
+          Verified simulator execution summary across predefined workloads.
+        </p>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-i18n="benchColWorkload">Workload</th>
+                <th data-i18n="benchColAlgo">Algorithm</th>
+                <th data-i18n="benchColWait">Avg Waiting Time</th>
+                <th data-i18n="benchColTurn">Avg Turnaround Time</th>
+                <th data-i18n="benchColResp">Avg Response Time</th>
+                <th data-i18n="benchColCS">Bay Changeovers</th>
+                <th data-i18n="benchColUtil">Bay Utilization</th>
+                <th data-i18n="benchColTicks">Total Ticks</th>
+                <th data-i18n="benchColVerify">Verification</th>
+              </tr>
+            </thead>
+            <tbody id="benchmark-table-body">
+              <tr>
+                <td colspan="9" class="empty-cell">Run benchmark suite to evaluate algorithms.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
