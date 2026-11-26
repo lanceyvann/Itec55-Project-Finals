@@ -1,40 +1,54 @@
 // =========================================================
-// PitStop OS - Process & PCB Management (Phase 2)
+// Process & PCB Management (Phase 2)
 // Manages Vehicle Service Jobs, PCBs, Parent-Child links,
 // and the 5-State Process Lifecycle.
 // =========================================================
 
 export const PROCESS_STATES = {
-  NEW: 'New',
-  READY: 'Ready',
-  RUNNING: 'Running',
-  WAITING: 'Waiting',
-  TERMINATED: 'Terminated',
+  NEW: 'New', READY: 'Ready', RUNNING: 'Running',
+  WAITING: 'Waiting', TERMINATED: 'Terminated',
 };
 
 export const SERVICE_TYPES = [
-  'Tire Replacement',
-  'Wheel Balancing',
-  'Tire Inspection',
+  'Tire Replacement', 'Wheel Balancing', 'Tire Inspection',
 ];
 
 // Internal module state
 let processList = [];
-let nextPid = 101;
+let nextPid = 1;
 let selectedPid = null;
+
+function isValidParentPid(candidatePpid, selfPid = null) {
+  if (candidatePpid === null || candidatePpid === undefined || candidatePpid === '') {
+    return false;
+  }
+  const num = Number(candidatePpid);
+  if (!Number.isInteger(num) || num <= 0 || num === selfPid) {
+    return false;
+  }
+  return processList.some((p) => p.pid === num);
+}
+
+function wouldCreateParentCycle(childPid, candidatePpid) {
+  if (!candidatePpid || !childPid) return false;
+  const visited = new Set([Number(childPid)]);
+  let cursor = Number(candidatePpid);
+  while (cursor) {
+    if (visited.has(cursor)) return true;
+    visited.add(cursor);
+    const parent = getProcessByPid(cursor);
+    cursor = parent ? parent.ppid : null;
+  }
+  return false;
+}
 
 /**
  * Creates a Process Control Block (PCB) for a vehicle service job.
  */
 export function createPCB({
-  name,
-  serviceType = 'Tire Replacement',
-  priority = 2,
-  arrivalTime = 0,
-  cpuBurst = 5,
-  ioBurst = 2,
-  ppid = null,
-  currentTick = 0,
+  name, serviceType = 'Tire Replacement', priority = 2,
+  arrivalTime = 0, cpuBurst = 5, ioBurst = 2,
+  ppid = null, currentTick = 0,
 }) {
   while (processList.some((p) => p.pid === nextPid)) {
     nextPid++;
@@ -44,11 +58,12 @@ export function createPCB({
   const safeIoBurst = Math.max(0, Number(ioBurst) || 0);
   const safeArrival = Math.max(0, Number(arrivalTime) || 0);
   const safePriority = Math.min(10, Math.max(1, Number(priority) || 2));
+  const resolvedPpid = isValidParentPid(ppid, pid) ? Number(ppid) : null;
 
   const pcb = {
     pid,
-    ppid: ppid ? Number(ppid) : null,
-    name: String(name || `Vehicle Job #${pid}`).trim(),
+    ppid: resolvedPpid,
+    name: String(name || `Vehicle Job #${String(pid).padStart(3, '0')}`).trim(),
     serviceType: SERVICE_TYPES.includes(serviceType) ? serviceType : 'Tire Replacement',
     state: PROCESS_STATES.NEW,
     priority: safePriority,
@@ -85,10 +100,8 @@ export function createPCB({
   return pcb;
 }
 
-/**
- * Transitions a process cleanly between the 5 lifecycle states
- * and updates simulated registers and transition history.
- */
+/*Transitions a process cleanly between the 5 lifecycle states 
+and updates simulated registers and transition history.*/
 export function transitionProcessState(pcb, newState, tick = 0, reason = '') {
   if (!pcb || pcb.state === newState) return false;
   if (pcb.state === PROCESS_STATES.TERMINATED) return false;
@@ -119,10 +132,7 @@ export function transitionProcessState(pcb, newState, tick = 0, reason = '') {
   return true;
 }
 
-/**
- * Adds a new vehicle service job to the process table.
- * If its arrivalTime <= currentTick, it enters the Ready state right away.
- */
+/*Adds a new vehicle service job to the process table. If its arrivalTime <= currentTick, it enters the Ready state right away.*/
 export function addProcess(options, currentTick = 0) {
   const pcb = createPCB({ ...options, currentTick });
   processList.push(pcb);
@@ -143,9 +153,7 @@ export function addProcess(options, currentTick = 0) {
   return pcb;
 }
 
-/**
- * Spawns a child vehicle sub-job (Parent-Child process demonstration).
- */
+/*Spawns a child vehicle sub-job (Parent-Child process demonstration).*/
 export function spawnChildProcess(parentPid, currentTick = 0) {
   const parent = getProcessByPid(parentPid);
   if (!parent || parent.state === PROCESS_STATES.TERMINATED) return null;
@@ -167,9 +175,7 @@ export function spawnChildProcess(parentPid, currentTick = 0) {
   );
 }
 
-/**
- * Updates a process priority (1 = highest, 10 = lowest).
- */
+/*Updates a process priority (1 = highest, 10 = lowest).*/
 export function updateProcessPriority(pid, newPriority) {
   const pcb = getProcessByPid(pid);
   if (!pcb || pcb.state === PROCESS_STATES.TERMINATED) return false;
@@ -177,9 +183,7 @@ export function updateProcessPriority(pid, newPriority) {
   return true;
 }
 
-/**
- * Terminates a process cleanly and marks completion tick.
- */
+/*Terminates a process cleanly and marks completion tick.*/
 export function terminateProcess(pid, currentTick = 0, reason = 'Terminated by user.') {
   const pcb = getProcessByPid(pid);
   if (!pcb || pcb.state === PROCESS_STATES.TERMINATED) return false;
@@ -193,9 +197,7 @@ export function terminateProcess(pid, currentTick = 0, reason = 'Terminated by u
   return transitionProcessState(pcb, PROCESS_STATES.TERMINATED, currentTick, reason);
 }
 
-/**
- * Updates editable fields of an active process (Update in CRUD).
- */
+/*Updates editable fields of an active process (Update in CRUD).*/
 export function updateProcess(pid, updates = {}, currentTick = 0) {
   const pcb = getProcessByPid(pid);
   if (!pcb || pcb.state === PROCESS_STATES.TERMINATED) {
@@ -217,8 +219,11 @@ export function updateProcess(pid, updates = {}, currentTick = 0) {
   }
 
   if (updates.ppid !== undefined) {
-    const nextPpid = updates.ppid ? Number(updates.ppid) : null;
-    pcb.ppid = nextPpid && nextPpid !== pcb.pid ? nextPpid : null;
+    const candidate = updates.ppid ? Number(updates.ppid) : null;
+    pcb.ppid =
+      isValidParentPid(candidate, pcb.pid) && !wouldCreateParentCycle(pcb.pid, candidate)
+        ? candidate
+        : null;
   }
 
   if (pcb.state === PROCESS_STATES.NEW && updates.arrivalTime !== undefined) {
@@ -267,9 +272,7 @@ export function updateProcess(pid, updates = {}, currentTick = 0) {
   };
 }
 
-/**
- * Removes a process from the process table and clears child references (Delete in CRUD).
- */
+/*Removes a process from the process table and clears child references (Delete in CRUD).*/
 export function deleteProcess(pid) {
   const numPid = Number(pid);
   const index = processList.findIndex((p) => p.pid === numPid);
@@ -290,23 +293,17 @@ export function deleteProcess(pid) {
   return removed;
 }
 
-/**
- * Finds a PCB by PID.
- */
+/*Finds a PCB by PID.*/
 export function getProcessByPid(pid) {
   return processList.find((p) => p.pid === Number(pid)) || null;
 }
 
-/**
- * Returns all PCBs in the process table.
- */
+/*Returns all PCBs in the process table.*/
 export function getAllProcesses() {
   return processList;
 }
 
-/**
- * Selected PID helpers for UI inspection.
- */
+/*Selected PID helpers for UI inspection.*/
 export function getSelectedPid() {
   return selectedPid;
 }
@@ -315,9 +312,7 @@ export function setSelectedPid(pid) {
   selectedPid = pid ? Number(pid) : null;
 }
 
-/**
- * Returns summary counts for dashboard KPI cards.
- */
+/*Returns summary counts for dashboard KPI cards.*/
 export function getProcessSummaryCounts() {
   let running = 0;
   let waiting = 0;
@@ -330,19 +325,17 @@ export function getProcessSummaryCounts() {
   }
 
   return {
-    total: processList.length,
+    total: processList.length, 
     running,
     waiting,
     completed,
   };
 }
 
-/**
- * Resets the process table and loads default starter jobs.
- */
+/*Resets the process table and loads default starter jobs.*/
 export function resetProcesses(starterJobs = []) {
   processList = [];
-  nextPid = 101;
+  nextPid = 1;
   selectedPid = null;
 
   for (const job of starterJobs) {
@@ -350,12 +343,10 @@ export function resetProcesses(starterJobs = []) {
   }
 }
 
-/**
- * Restores all existing processes (default + Rush Hour + user-added)
- * back to their initial Tick 0 execution state without deleting records.
- */
+/*Restores all existing processes (default + Rush Hour + user-added) 
+back to their initial Tick 0 execution state without deleting records.*/
 export function resetProcessesForReplay() {
-  let maxPid = 100;
+  let maxPid = 0;
 
   for (const pcb of processList) {
     if (pcb.pid > maxPid) {
@@ -403,9 +394,7 @@ export function resetProcessesForReplay() {
   }
 }
 
-/**
- * Creates a deep clone of process module state for Time Machine snapshots.
- */
+/*Creates a deep clone of process module state for Time Machine snapshots.*/
 export function exportProcessState() {
   return {
     nextPid,
@@ -414,9 +403,7 @@ export function exportProcessState() {
   };
 }
 
-/**
- * Restores process module state from a Time Machine snapshot.
- */
+/*Restores process module state from a Time Machine snapshot.*/
 export function importProcessState(snapshot) {
   nextPid = snapshot.nextPid;
   selectedPid = snapshot.selectedPid;
