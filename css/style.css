@@ -1,28 +1,27 @@
 /* =========================================================
-   PitStop OS - Phase 1 Stylesheet
-   Dark charcoal workshop theme with automotive orange accents
+   PitStop OS - Stylesheet
    ========================================================= */
 
 :root {
-  --bg-canvas: #f3efe6;
-  --bg-surface: #faf7f0;
-  --bg-elevated: #e8e1d3;
-  --bg-hover: #ddd4c3;
-  --border-color: #ccc2b0;
-
-  --text-primary: #24332c;
-  --text-secondary: #48584f;
-  --text-muted: #6c7a71;
-
-  --accent-orange: #c95b2b;
-  --accent-orange-hover: #ae4b20;
-  --accent-orange-soft: #f5e1d4;
-
-  --color-green: #586f3b;
-  --color-blue: #3b584d;
-  --color-amber: #9e621b;
-  --color-red: #a63a2b;
-
+  /* Workshop surfaces */
+  --bg-canvas: #E8E6DF;
+  --bg-surface: #F5F3EC;
+  --bg-elevated: #D4D1C7;
+  --bg-hover: #C4C1B7;
+  --border-color: #B9B6AC;
+  /* Mechanic uniform */
+  --text-primary: #26342F;
+  --text-secondary: #52635A;
+  --text-muted: #788078;
+  /* Safety orange */
+  --accent-orange: #E16B32;
+  --accent-orange-hover: #B94D25;
+  --accent-orange-soft: #F5DFD1;
+  /* Workshop status colors */
+  --color-green: #557A4E;
+  --color-blue: #42677A;
+  --color-amber: #C18A2D;
+  --color-red: #B83D32;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
