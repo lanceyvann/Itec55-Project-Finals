@@ -1,219 +1,181 @@
 // =========================================================
-// PitStop OS - Simulation Orchestrator & Time Machine (Phase 8)
+// Simulation Orchestrator & Time Machine (Phase 8)
 // Coordinates simulation boot/reset, presets, tick steps,
 // Deadlock demo, and Time Machine snapshot history/replay.
 // =========================================================
 
 import {
-  exportProcessState,
-  getAllProcesses,
-  importProcessState,
-  resetProcesses,
-  resetProcessesForReplay,
-  setSelectedPid,
+  exportProcessState, getAllProcesses, importProcessState,
+  resetProcesses, resetProcessesForReplay, setSelectedPid,
 } from './processes.js';
 import {
-  enqueueReadyProcess,
-  exportSchedulerState,
-  getSchedulerState,
-  importSchedulerState,
-  isSimulationComplete,
-  removePidFromScheduler,
-  resetScheduler,
-  stepSchedulerTick,
+  enqueueReadyProcess, exportSchedulerState, getSchedulerState, importSchedulerState, 
+  isSimulationComplete, removePidFromScheduler, resetScheduler, stepSchedulerTick,
 } from './scheduler.js';
 import {
-  exportKernelState,
-  importKernelState,
-  logKernelEvent,
-  resetKernel,
-  sysCreateProcess,
-  sysTerminateProcess,
+  exportKernelState, importKernelState, logKernelEvent,
+  resetKernel, sysCreateProcess, sysTerminateProcess,
 } from './kernel.js';
 import {
-  exportThreadState,
-  importThreadState,
-  initializeProcessThreads,
-  resetThreadCounter,
-  resetThreadsForReplay,
-  syncThreadsWithProcesses,
+  exportThreadState, importThreadState, initializeProcessThreads,
+  resetThreadCounter, resetThreadsForReplay,syncThreadsWithProcesses,
 } from './threads.js';
 import {
-  EQUIPMENT_IDS,
-  acquireResource,
-  exportResourceState,
-  getDeadlockStatus,
-  getResourceById,
-  importResourceState,
-  resetResources,
+  EQUIPMENT_IDS, acquireResource, exportResourceState, getDeadlockStatus, 
+  getResourceById, importResourceState, resetResources,
 } from './resources.js';
 
-export const WORKLOAD_PRESETS = {
+function deepFreeze(value) {
+  if (!value || typeof value !== 'object') return value;
+  Object.freeze(value);
+  for (const prop of Object.values(value)) {
+    if (prop && typeof prop === 'object' && !Object.isFrozen(prop)) {
+      deepFreeze(prop);
+    }
+  }
+  return value;
+}
+
+export const WORKLOAD_PRESETS = deepFreeze({
   balanced: [
     {
-      name: 'Sedan Civic - Front Tires',
-      serviceType: 'Tire Replacement',
-      priority: 2,
-      arrivalTime: 0,
-      cpuBurst: 6,
-      ioBurst: 2,
+      name: 'Sedan Civic - Front Tires', serviceType: 'Tire Replacement',
+      priority: 2, arrivalTime: 0, cpuBurst: 6, ioBurst: 2,
     },
     {
-      name: 'SUV Fortuner - All Wheels',
-      serviceType: 'Wheel Balancing',
-      priority: 1,
-      arrivalTime: 0,
-      cpuBurst: 4,
-      ioBurst: 2,
+      name: 'SUV Fortuner - All Wheels', serviceType: 'Wheel Balancing',
+      priority: 1, arrivalTime: 0, cpuBurst: 4, ioBurst: 2,
     },
     {
-      name: 'Hatchback Wigo - Safety Check',
-      serviceType: 'Tire Inspection',
-      priority: 4,
-      arrivalTime: 1,
-      cpuBurst: 3,
-      ioBurst: 0,
+      name: 'Hatchback Wigo - Safety Check', serviceType: 'Tire Inspection',
+      priority: 4, arrivalTime: 1, cpuBurst: 3, ioBurst: 0,
     },
     {
-      name: 'Pickup Hilux - Rear Axle',
-      serviceType: 'Tire Replacement',
-      priority: 3,
-      arrivalTime: 2,
-      cpuBurst: 5,
-      ioBurst: 1,
+      name: 'Pickup Hilux - Rear Axle', serviceType: 'Tire Replacement',
+      priority: 3, arrivalTime: 2, cpuBurst: 5, ioBurst: 1,
     },
   ],
   'cpu-heavy': [
     {
-      name: 'Delivery Van - 4 Tire Swap',
-      serviceType: 'Tire Replacement',
-      priority: 2,
-      arrivalTime: 0,
-      cpuBurst: 10,
-      ioBurst: 0,
+      name: 'Delivery Van - 4 Tire Swap', serviceType: 'Tire Replacement',
+      priority: 2, arrivalTime: 0, cpuBurst: 10, ioBurst: 0,
     },
     {
-      name: 'Sports Coupe - Precision Balance',
-      serviceType: 'Wheel Balancing',
-      priority: 1,
-      arrivalTime: 1,
-      cpuBurst: 8,
-      ioBurst: 0,
+      name: 'Sports Coupe - Precision Balance', serviceType: 'Wheel Balancing',
+      priority: 1, arrivalTime: 1, cpuBurst: 8, ioBurst: 0,
     },
     {
-      name: 'SUV Montero - Full Tread Overhaul',
-      serviceType: 'Tire Replacement',
-      priority: 3,
-      arrivalTime: 2,
-      cpuBurst: 7,
-      ioBurst: 1,
+      name: 'SUV Montero - Full Tread Overhaul', serviceType: 'Tire Replacement',
+      priority: 3, arrivalTime: 2, cpuBurst: 7, ioBurst: 1,
     },
   ],
   'io-heavy': [
     {
-      name: 'Sedan Vios - Valve & Balance',
-      serviceType: 'Wheel Balancing',
-      priority: 2,
-      arrivalTime: 0,
-      cpuBurst: 3,
-      ioBurst: 4,
+      name: 'Sedan Vios - Valve & Balance', serviceType: 'Wheel Balancing',
+      priority: 2, arrivalTime: 0, cpuBurst: 3, ioBurst: 4,
     },
     {
-      name: 'Crossover HRV - Pressure Diagnostics',
-      serviceType: 'Tire Inspection',
-      priority: 1,
-      arrivalTime: 0,
-      cpuBurst: 2,
-      ioBurst: 5,
+      name: 'Crossover HRV - Pressure Diagnostics', serviceType: 'Tire Inspection',
+      priority: 1, arrivalTime: 0, cpuBurst: 2, ioBurst: 5,
     },
     {
-      name: 'Sedan Altis - Alignment & Mount',
-      serviceType: 'Tire Replacement',
-      priority: 3,
-      arrivalTime: 1,
-      cpuBurst: 4,
-      ioBurst: 3,
+      name: 'Sedan Altis - Alignment & Mount', serviceType: 'Tire Replacement',
+      priority: 3, arrivalTime: 1, cpuBurst: 4, ioBurst: 3,
     },
   ],
-};
+});
 
 // Predefined Rush Hour vehicle templates with fixed attributes
-export const RUSH_HOUR_TEMPLATES = [
+export const RUSH_HOUR_TEMPLATES = deepFreeze([
   {
-    name: 'Hatchback Jazz - Express Patch',
-    serviceType: 'Tire Inspection',
-    priority: 1,
-    arrivalTime: 0,
-    cpuBurst: 3,
-    ioBurst: 1,
+    name: 'Hatchback Jazz - Express Patch', serviceType: 'Tire Inspection',
+    priority: 1, arrivalTime: 0, cpuBurst: 3, ioBurst: 1,
   },
   {
-    name: 'Pickup Ranger - Mud-Terrain Mount',
-    serviceType: 'Tire Replacement',
-    priority: 2,
-    arrivalTime: 0,
-    cpuBurst: 6,
-    ioBurst: 2,
+    name: 'Pickup Ranger - Mud-Terrain Mount', serviceType: 'Tire Replacement',
+    priority: 2, arrivalTime: 0, cpuBurst: 6, ioBurst: 2,
   },
   {
-    name: 'MPV Innova - 4-Wheel Balance',
-    serviceType: 'Wheel Balancing',
-    priority: 2,
-    arrivalTime: 1,
-    cpuBurst: 4,
-    ioBurst: 2,
+    name: 'MPV Innova - 4-Wheel Balance', serviceType: 'Wheel Balancing',
+    priority: 2, arrivalTime: 1, cpuBurst: 4, ioBurst: 2,
   },
   {
-    name: 'Sedan Accord - Front Tire Swap',
-    serviceType: 'Tire Replacement',
-    priority: 3,
-    arrivalTime: 1,
-    cpuBurst: 5,
-    ioBurst: 2,
+    name: 'Sedan Accord - Front Tire Swap', serviceType: 'Tire Replacement',
+    priority: 3, arrivalTime: 1, cpuBurst: 5, ioBurst: 2,
   },
   {
-    name: 'Van Hiace - Fleet Safety Check',
-    serviceType: 'Tire Inspection',
-    priority: 1,
-    arrivalTime: 0,
-    cpuBurst: 4,
-    ioBurst: 1,
+    name: 'Van Hiace - Fleet Safety Check', serviceType: 'Tire Inspection',
+    priority: 1, arrivalTime: 0, cpuBurst: 4, ioBurst: 1,
   },
   {
-    name: 'SUV Everest - High-Speed Balance',
-    serviceType: 'Wheel Balancing',
-    priority: 2,
-    arrivalTime: 2,
-    cpuBurst: 5,
-    ioBurst: 1,
+    name: 'SUV Everest - High-Speed Balance', serviceType: 'Wheel Balancing',
+    priority: 2, arrivalTime: 2, cpuBurst: 5, ioBurst: 1,
   },
   {
-    name: 'Coupe BRZ - Performance Mount',
-    serviceType: 'Tire Replacement',
-    priority: 1,
-    arrivalTime: 1,
-    cpuBurst: 4,
-    ioBurst: 2,
+    name: 'Coupe BRZ - Performance Mount', serviceType: 'Tire Replacement',
+    priority: 1, arrivalTime: 1, cpuBurst: 4, ioBurst: 2,
   },
   {
-    name: 'Compact Mirage - Valve & Pressure',
-    serviceType: 'Tire Inspection',
-    priority: 4,
-    arrivalTime: 2,
-    cpuBurst: 2,
-    ioBurst: 1,
+    name: 'Compact Mirage - Valve & Pressure', serviceType: 'Tire Inspection',
+    priority: 4, arrivalTime: 2, cpuBurst: 2, ioBurst: 1,
   },
-];
+]);
 
-// Time Machine state: array of tick snapshots
+// Time Machine & active workload state
 let snapshots = [];
 let viewIndex = -1;
+let activeWorkloadKey = 'balanced';
+let workloadCustomized = false;
+
+function doesProcessListMatchPreset(presetKey) {
+  const preset = WORKLOAD_PRESETS[presetKey];
+  if (!preset) return false;
+  const processes = getAllProcesses();
+  if (processes.length !== preset.length) return false;
+
+  return preset.every((tpl, idx) => {
+    const pcb = processes[idx];
+    return (
+      pcb &&
+      pcb.name === tpl.name &&
+      pcb.serviceType === tpl.serviceType &&
+      pcb.priority === tpl.priority &&
+      pcb.arrivalTime === tpl.arrivalTime &&
+      pcb.cpuBurst === tpl.cpuBurst &&
+      pcb.ioBurst === tpl.ioBurst &&
+      pcb.ppid === null
+    );
+  });
+}
+
+export function markWorkloadCustomized() {
+  if (activeWorkloadKey === 'deadlock-demo') {
+    workloadCustomized = true;
+    return;
+  }
+  workloadCustomized = !doesProcessListMatchPreset(activeWorkloadKey);
+}
+
+export function getWorkloadState() {
+  const isPreset = Boolean(WORKLOAD_PRESETS[activeWorkloadKey]);
+  const matchesPreset = isPreset ? doesProcessListMatchPreset(activeWorkloadKey) : false;
+  const isCustomized = isPreset ? workloadCustomized || !matchesPreset : true;
+  return {
+    activeWorkloadKey,
+    isPreset,
+    matchesPreset,
+    isCustomized,
+    processCount: getAllProcesses().length,
+  };
+}
 
 function buildSnapshot(label = '') {
   const tick = getSchedulerState().currentTick;
   return {
     tick,
     label: label || `Tick ${tick}`,
+    activeWorkloadKey,
+    workloadCustomized,
     processes: exportProcessState(),
     scheduler: exportSchedulerState(),
     kernel: exportKernelState(),
@@ -224,6 +186,12 @@ function buildSnapshot(label = '') {
 
 function restoreSnapshotObject(snap) {
   if (!snap) return;
+  if (typeof snap.activeWorkloadKey === 'string') {
+    activeWorkloadKey = snap.activeWorkloadKey;
+  }
+  if (typeof snap.workloadCustomized === 'boolean') {
+    workloadCustomized = snap.workloadCustomized;
+  }
   importProcessState(snap.processes);
   importSchedulerState(snap.scheduler);
   importKernelState(snap.kernel);
@@ -231,9 +199,7 @@ function restoreSnapshotObject(snap) {
   importResourceState(snap.resources);
 }
 
-/**
- * Saves a new snapshot at the end of the Time Machine timeline.
- */
+/*Saves a new snapshot at the end of the Time Machine timeline.*/
 export function captureSnapshot(label = '') {
   // If user previously rewound and resumed from an earlier tick, trim future states
   if (viewIndex >= 0 && viewIndex < snapshots.length - 1) {
@@ -243,9 +209,7 @@ export function captureSnapshot(label = '') {
   viewIndex = snapshots.length - 1;
 }
 
-/**
- * Updates the current live snapshot (e.g., after manual user syscall at current tick).
- */
+/*Updates the current live snapshot (e.g., after manual user syscall at current tick).*/
 export function syncLiveSnapshot() {
   if (snapshots.length === 0) {
     captureSnapshot('Initial');
@@ -270,9 +234,7 @@ export function getTimeMachineInfo() {
   };
 }
 
-/**
- * Jumps Time Machine view to a specific snapshot index.
- */
+/*Jumps Time Machine view to a specific snapshot index.*/
 export function previewSnapshot(index) {
   const idx = Number(index);
   if (Number.isNaN(idx) || idx < 0 || idx >= snapshots.length) return false;
@@ -291,9 +253,7 @@ export function stepSnapshotForward() {
   return previewSnapshot(viewIndex + 1);
 }
 
-/**
- * Finds and previews the snapshot matching a given simulation tick.
- */
+/*Finds and previews the snapshot matching a given simulation tick.*/
 export function jumpToTickSnapshot(tick) {
   const target = Number(tick);
   const idx = snapshots.findIndex((s) => s.tick === target);
@@ -301,9 +261,7 @@ export function jumpToTickSnapshot(tick) {
   return previewSnapshot(idx);
 }
 
-/**
- * Commits the currently previewed historical snapshot as the new live state.
- */
+/*Commits the currently previewed historical snapshot as the new live state.*/
 export function resumeFromSnapshot() {
   if (viewIndex < 0 || viewIndex >= snapshots.length) return false;
 
@@ -320,11 +278,13 @@ export function resumeFromSnapshot() {
   return true;
 }
 
-/**
- * Resets the entire simulator with a chosen workload preset.
- */
+/*Resets the entire simulator with a chosen workload preset.*/
 export function resetSimulation(presetKey = 'balanced') {
-  const starterJobs = WORKLOAD_PRESETS[presetKey] || WORKLOAD_PRESETS.balanced;
+  const resolvedKey = WORKLOAD_PRESETS[presetKey] ? presetKey : 'balanced';
+  const starterJobs = WORKLOAD_PRESETS[resolvedKey].map((job) => ({ ...job }));
+  activeWorkloadKey = resolvedKey;
+  workloadCustomized = false;
+
   resetProcesses(starterJobs);
   resetThreadCounter(1);
   for (const pcb of getAllProcesses()) {
@@ -333,23 +293,22 @@ export function resetSimulation(presetKey = 'balanced') {
   resetResources();
   resetScheduler();
   resetKernel();
-  logKernelEvent(0, `Loaded "${presetKey}" preset (${starterJobs.length} processes).`, 'BOOT');
+  logKernelEvent(0, `Loaded "${resolvedKey}" preset (${starterJobs.length} processes).`, 'BOOT');
 
   snapshots = [];
   viewIndex = -1;
   captureSnapshot('Tick 0 (Initial)');
 }
 
-/**
- * Resets scheduler, timers, queues, metrics, resources, and Gantt chart
- * while preserving all existing default and Rush Hour process records.
- */
+/*Resets scheduler, timers, queues, metrics, resources, 
+and Gantt chart while preserving all existing default, custom, and Rush Hour process records.*/
 export function resetSimulationPreservingProcesses() {
   resetProcessesForReplay();
   resetThreadsForReplay();
   resetResources();
   resetScheduler();
   resetKernel();
+  markWorkloadCustomized();
 
   const totalCount = getAllProcesses().length;
   logKernelEvent(
@@ -363,10 +322,7 @@ export function resetSimulationPreservingProcesses() {
   captureSnapshot('Tick 0 (Reset)');
 }
 
-/**
- * Rush Hour Feature: randomly selects 2-4 predefined vehicle templates
- * with fixed attributes and spawns them with unique PIDs.
- */
+/*Rush Hour Feature: randomly selects 2-4 predefined vehicle templates with fixed attributes and spawns them with unique PIDs.*/
 export function triggerRushHour() {
   if (getTimeMachineInfo().isReplaying) return [];
 
@@ -391,6 +347,7 @@ export function triggerRushHour() {
   }
 
   if (created.length > 0) {
+    workloadCustomized = true;
     setSelectedPid(created[0].pid);
     logKernelEvent(
       currentTick,
@@ -405,9 +362,7 @@ export function triggerRushHour() {
   return created;
 }
 
-/**
- * Advances simulation by one tick unless deadlocked, replaying history, or finished.
- */
+/*Advances simulation by one tick unless deadlocked, replaying history, or finished.*/
 export function stepSimulationTick() {
   if (getTimeMachineInfo().isReplaying) {
     return { haltedByReplay: true, haltedByDeadlock: false, completed: false };
@@ -447,10 +402,10 @@ export function stepSimulationTick() {
   };
 }
 
-/**
- * Triggers the predefined 2-process, 2-equipment-lock circular wait Deadlock demo.
- */
+/*Triggers the predefined 2-process, 2-equipment-lock circular wait Deadlock demo.*/
 export function runDeadlockDemo() {
+  activeWorkloadKey = 'deadlock-demo';
+  workloadCustomized = true;
   resetProcesses([]);
   resetThreadCounter(1);
   resetResources();
@@ -459,24 +414,16 @@ export function runDeadlockDemo() {
 
   const procA = sysCreateProcess(
     {
-      name: 'Sedan Civic - Mount & Balance',
-      serviceType: 'Tire Replacement',
-      priority: 1,
-      arrivalTime: 0,
-      cpuBurst: 4,
-      ioBurst: 0,
+      name: 'Sedan Civic - Mount & Balance', serviceType: 'Tire Replacement',
+      priority: 1, arrivalTime: 0, cpuBurst: 4, ioBurst: 0,
     },
     0
   );
 
   const procB = sysCreateProcess(
     {
-      name: 'SUV Fortuner - Balance & Mount',
-      serviceType: 'Wheel Balancing',
-      priority: 1,
-      arrivalTime: 0,
-      cpuBurst: 4,
-      ioBurst: 0,
+      name: 'SUV Fortuner - Balance & Mount', serviceType: 'Wheel Balancing',
+      priority: 1, arrivalTime: 0, cpuBurst: 4, ioBurst: 0,
     },
     0
   );
@@ -508,10 +455,8 @@ export function runDeadlockDemo() {
   captureSnapshot('Tick 0 (Deadlock)');
 }
 
-/**
- * Resolves an active circular deadlock by terminating the second lock holder
- * (OS Deadlock Recovery) so the remaining process can acquire its lock and proceed.
- */
+/*Resolves an active circular deadlock by terminating the second lock holder 
+(OS Deadlock Recovery) so the remaining process can acquire its lock and proceed.*/
 export function resolveDeadlockDemo() {
   const status = getDeadlockStatus();
   if (!status.detected) return false;
