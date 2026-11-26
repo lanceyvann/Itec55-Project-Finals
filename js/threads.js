@@ -1,5 +1,5 @@
 // =========================================================
-// PitStop OS - Thread Management (TCB) (Phase 6)
+// Thread Management (TCB) (Phase 6)
 // Manages multiple Mechanic Service Tasks (threads) per
 // Vehicle Service Job (process), private vs shared data.
 // =========================================================
@@ -10,32 +10,22 @@ let nextTid = 1;
 
 const SERVICE_THREAD_TEMPLATES = {
   'Tire Replacement': [
-    'Tire Inspection',
-    'Tire Removal',
-    'Tire Installation',
+    'Tire Inspection', 'Tire Removal', 'Tire Installation',
   ],
   'Wheel Balancing': [
-    'Rim & Tire Inspection',
-    'Balancer Spin Measurement',
-    'Counterweight Calibration',
+    'Rim & Tire Inspection', 'Balancer Spin Measurement', 'Counterweight Calibration',
   ],
   'Tire Inspection': [
-    'Tread Depth Check',
-    'Valve & Pressure Test',
-    'Safety Sign-Off',
+    'Tread Depth Check', 'Valve & Pressure Test', 'Safety Sign-Off',
   ],
 };
 
-/**
- * Resets the global TID counter.
- */
+/*Resets the global TID counter.*/
 export function resetThreadCounter(startTid = 1) {
   nextTid = startTid;
 }
 
-/**
- * Creates a single Thread Control Block (TCB).
- */
+/*Creates a single Thread Control Block (TCB).*/
 export function createTCB(parentPid, taskName) {
   const tid = nextTid++;
   return {
@@ -51,9 +41,7 @@ export function createTCB(parentPid, taskName) {
   };
 }
 
-/**
- * Initializes the default 3 mechanic threads for a vehicle service job.
- */
+/*Initializes the default 3 mechanic threads for a vehicle service job.*/
 export function initializeProcessThreads(pcb) {
   if (!pcb) return [];
   const names =
@@ -64,10 +52,8 @@ export function initializeProcessThreads(pcb) {
   return pcb.threads;
 }
 
-/**
- * Resets existing thread states and instruction pointers back to Tick 0
- * while preserving any extra threads on preserved processes.
- */
+/*Resets existing thread states and instruction pointers back to Tick 0 
+while preserving any extra threads on preserved processes.*/
 export function resetThreadsForReplay() {
   for (const pcb of getAllProcesses()) {
     if (!pcb.threads || pcb.threads.length === 0) {
@@ -81,9 +67,7 @@ export function resetThreadsForReplay() {
   }
 }
 
-/**
- * Spawns an additional thread inside an active process.
- */
+/*Spawns an additional thread inside an active process.*/
 export function addThreadToProcess(pid, taskName) {
   const pcb = getProcessByPid(pid);
   if (!pcb || pcb.state === PROCESS_STATES.TERMINATED) return null;
@@ -93,9 +77,7 @@ export function addThreadToProcess(pid, taskName) {
   return tcb;
 }
 
-/**
- * Joins (completes) a thread inside a process.
- */
+/*Joins (completes) a thread inside a process.*/
 export function joinThreadInProcess(pid, tid = null) {
   const pcb = getProcessByPid(pid);
   if (!pcb || !pcb.threads || pcb.threads.length === 0) return null;
@@ -110,9 +92,7 @@ export function joinThreadInProcess(pid, tid = null) {
   return target;
 }
 
-/**
- * Synchronizes each process's TCB states based on its execution progress.
- */
+/*Synchronizes each process's TCB states based on its execution progress.*/
 export function syncThreadsWithProcesses() {
   const processes = getAllProcesses();
 
@@ -160,15 +140,14 @@ export function syncThreadsWithProcesses() {
   }
 }
 
-/**
- * Describes shared vs. private resources for the selected process.
- */
+/*Describes shared vs. private resources for the selected process.*/
 export function getSharedProcessResources(pcb) {
   if (!pcb) return null;
+  const paddedPid = String(pcb.pid).padStart(3, '0');
 
   return {
-    workOrder: `Work Order #${pcb.pid} (${pcb.name})`,
-    memorySpace: `0x${pcb.pid}000 - 0x${pcb.pid}FFF`,
+    workOrder: `Work Order #${paddedPid} (${pcb.name})`,
+    memorySpace: `0x${paddedPid}000 - 0x${paddedPid}FFF`,
     equipmentLocks:
       pcb.heldResources && pcb.heldResources.length > 0
         ? pcb.heldResources.join(', ')
