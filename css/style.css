@@ -149,14 +149,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  flex-wrap: nowrap;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .nav-link {
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   white-space: nowrap;
   text-align: center;
@@ -164,19 +164,23 @@ body {
 }
 
 .nav-link[data-i18n="navScheduler"] {
-  min-width: 128px;
+  min-width: 118px;
 }
 
 .nav-link[data-i18n="navProcesses"] {
-  min-width: 102px;
+  min-width: 96px;
 }
 
 .nav-link[data-i18n="navResources"] {
-  min-width: 148px;
+  min-width: 138px;
 }
 
 .nav-link[data-i18n="navKernel"] {
-  min-width: 98px;
+  min-width: 92px;
+}
+
+.nav-link[data-i18n="navBenchmark"] {
+  min-width: 102px;
 }
 
 .nav-link:hover {
@@ -1070,3 +1074,199 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Benchmarking & Testing Suite */
+.benchmark-toolbar {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.benchmark-highlights {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.benchmark-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.chart-card {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chart-card-header .sub-label {
+  margin-bottom: 0;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.chart-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-group {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.chart-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 68px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.bar-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.bar-track {
+  height: 12px;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.bar-value {
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.benchmark-test-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.test-check-card {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.test-check-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.verify-status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.best-metric-val {
+  color: var(--color-green);
+  font-weight: 700;
+}
+
+.best-tag {
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 4px;
+  color: var(--color-green);
+}
+
+.workload-divider-row td {
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+@media (max-width: 1120px) {
+  .benchmark-highlights,
+  .benchmark-test-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .benchmark-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .benchmark-highlights,
+  .benchmark-test-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
