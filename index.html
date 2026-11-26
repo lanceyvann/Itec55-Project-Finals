@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>PitStop OS — Tire Service Workshop Mini-OS Simulator</title>
     <meta
       name="description"
@@ -36,6 +36,7 @@
           <a href="#pcb-section" class="nav-link" data-i18n="navProcesses">Vehicle Records</a>
           <a href="#resources-section" class="nav-link" data-i18n="navResources">Mechanics &amp; Equipment</a>
           <a href="#kernel-section" class="nav-link" data-i18n="navKernel">Operations Log</a>
+          <a href="#benchmark-section" class="nav-link" data-i18n="navBenchmark">Shop Benchmarks</a>
         </nav>
 
         <div class="header-actions">
@@ -44,19 +45,13 @@
             <span class="mode-value" id="mode-value-text">User Mode</span>
           </div>
 
-          <button
-            type="button"
-            id="dual-view-toggle"
-            class="btn btn-secondary"
+          <button type="button" id="dual-view-toggle" class="btn btn-secondary"
             title="Switch between Tire Shop Story View and Operating System View"
           >
             View: Story Mode
           </button>
 
-          <button
-            type="button"
-            id="open-guide-btn"
-            class="btn btn-secondary"
+          <button type="button" id="open-guide-btn" class="btn btn-secondary"
             title="Open Story Mode & OS Mode Concept Guide"
           >
             Guide
@@ -91,12 +86,9 @@
           <label class="field-inline" for="quantum-input" id="quantum-wrapper">
             <span data-i18n="labelQuantum">Bay Turn</span>
             <input
-              type="number"
-              id="quantum-input"
-              class="number-input"
-              min="1"
-              max="10"
-              value="2"
+              type="number" id="quantum-input"
+              class="number-input" min="1"
+              max="10" value="2"
             />
           </label>
 
@@ -121,11 +113,8 @@
           </label>
           <button type="button" id="btn-load-preset" class="btn btn-secondary">Load</button>
           <button
-            type="button"
-            id="btn-rush-hour"
-            class="btn btn-secondary"
-            data-i18n="rushHourBtn"
-            title="Spawn 2–4 predefined vehicle service jobs"
+            type="button" id="btn-rush-hour" class="btn btn-secondary"
+            data-i18n="rushHourBtn" title="Spawn 2–4 predefined vehicle service jobs"
           >
             Rush Hour
           </button>
@@ -257,19 +246,14 @@
                   <div class="sub-label" data-i18n="whyTitle">"Why?" Service Bay Assignment Explainer</div>
                   <div class="why-controls">
                     <select
-                      id="why-decision-select"
-                      class="select-input select-sm"
-                      aria-label="Select scheduling decision tick"
-                      disabled
+                      id="why-decision-select" class="select-input select-sm"
+                      aria-label="Select scheduling decision tick" disabled
                     >
                       <option value="">No assignments yet</option>
                     </select>
                     <button
-                      type="button"
-                      id="btn-why-jump-tick"
-                      class="btn btn-secondary btn-sm"
-                      data-i18n="whyJumpBtn"
-                      disabled
+                      type="button" id="btn-why-jump-tick"
+                      class="btn btn-secondary btn-sm" data-i18n="whyJumpBtn" disabled
                     >
                       View in Shift Replay
                     </button>
@@ -356,10 +340,8 @@
                       Simulate Gridlock
                     </button>
                     <button
-                      type="button"
-                      id="btn-resolve-deadlock"
-                      class="btn btn-danger-outline btn-sm"
-                      disabled
+                      type="button" id="btn-resolve-deadlock"
+                      class="btn btn-danger-outline btn-sm" disabled
                     >
                       Resolve
                     </button>
@@ -461,13 +443,8 @@
                 Prev Tick
               </button>
               <input
-                type="range"
-                id="tm-slider"
-                class="tm-slider"
-                min="0"
-                max="0"
-                value="0"
-                disabled
+                type="range" id="tm-slider" class="tm-slider"
+                min="0" max="0" value="0" disabled
               />
               <button type="button" id="btn-tm-next" class="btn btn-secondary btn-sm" disabled>
                 Next Tick
@@ -482,6 +459,121 @@
             </div>
           </section>
         </div>
+
+        <!-- Benchmarking & Testing Suite -->
+        <section id="benchmark-section" class="panel" aria-label="Benchmarking and testing suite">
+          <div class="panel-header">
+            <h2 class="panel-title" data-i18n="benchmarkTitle">
+              Shop Benchmark &amp; Testing Suite
+            </h2>
+            <span class="panel-meta tabular" id="benchmark-meta-status">
+              12 runs · Consistent conditions
+            </span>
+          </div>
+
+          <div class="benchmark-toolbar">
+            <div class="control-group">
+              <label class="field-inline" for="benchmark-workload-select">
+                <span data-i18n="benchmarkWorkloadLabel">Workload</span>
+                <select id="benchmark-workload-select" class="select-input">
+                  <option value="all" data-i18n="workloadAll">All Workloads (3 Presets)</option>
+                  <option value="balanced" data-i18n="workloadBalanced">Balanced Shop Mix</option>
+                  <option value="cpu-heavy" data-i18n="workloadCpuHeavy">Bay-Heavy (Long Services)</option>
+                  <option value="io-heavy" data-i18n="workloadIoHeavy">Equipment-Heavy (Frequent Locks)</option>
+                </select>
+              </label>
+
+              <label class="field-inline" for="benchmark-metric-select">
+                <span data-i18n="benchmarkMetricLabel">Chart Metric</span>
+                <select id="benchmark-metric-select" class="select-input">
+                  <option value="avgWaiting" data-i18n="metricOptWait">Avg Waiting Time</option>
+                  <option value="avgTurnaround" data-i18n="metricOptTurnaround">Avg Turnaround Time</option>
+                  <option value="avgResponse" data-i18n="metricOptResponse">Avg Response Time</option>
+                  <option value="contextSwitches" data-i18n="metricOptCS">Service Bay Changeovers</option>
+                  <option value="cpuUtilization" data-i18n="metricOptUtil">Bay Utilization (%)</option>
+                </select>
+              </label>
+
+              <label class="field-inline" for="benchmark-quantum-input">
+                <span data-i18n="benchmarkQuantumLabel">RR Test Turn (Q)</span>
+                <input
+                  type="number"
+                  id="benchmark-quantum-input"
+                  class="number-input"
+                  min="1"
+                  max="10"
+                  value="2"
+                />
+              </label>
+            </div>
+
+            <div class="control-group">
+              <button
+                type="button"
+                id="btn-run-benchmark"
+                class="btn btn-primary"
+                data-i18n="benchmarkRunBtn"
+              >
+                Run Benchmark Suite
+              </button>
+            </div>
+          </div>
+
+          <div id="benchmark-highlights" class="benchmark-highlights" aria-label="Algorithm comparison highlights"></div>
+
+          <div class="benchmark-charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="sub-label" id="chart-metric-title">Algorithm Comparison</div>
+                <div class="chart-legend" id="chart-algo-legend"></div>
+              </div>
+              <div id="benchmark-metric-chart" class="chart-groups"></div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="sub-label" id="chart-profile-title">Multi-Metric Trade-Off Comparison</div>
+                <span class="muted-note" id="chart-profile-subtitle">Selected workload</span>
+              </div>
+              <div id="benchmark-profile-chart" class="chart-groups"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sub-label" data-i18n="benchmarkSummaryTitle">
+              Consolidated Benchmark Results (Verified Engine Execution)
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="benchColWorkload">Workload</th>
+                    <th data-i18n="benchColAlgo">Algorithm</th>
+                    <th data-i18n="benchColWait">Avg Waiting Time</th>
+                    <th data-i18n="benchColTurn">Avg Turnaround Time</th>
+                    <th data-i18n="benchColResp">Avg Response Time</th>
+                    <th data-i18n="benchColCS">Bay Changeovers</th>
+                    <th data-i18n="benchColUtil">Bay Utilization</th>
+                    <th data-i18n="benchColTicks">Total Ticks</th>
+                    <th data-i18n="benchColVerify">Verification</th>
+                  </tr>
+                </thead>
+                <tbody id="benchmark-table-body">
+                  <tr>
+                    <td colspan="9" class="empty-cell">Run benchmark suite to evaluate algorithms.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="sub-label" data-i18n="benchTestsTitle">
+              Automated Engine &amp; Reproducibility Verification Suite
+            </div>
+            <div id="benchmark-test-strip" class="benchmark-test-strip"></div>
+          </div>
+        </section>
       </main>
     </div>
 
@@ -678,6 +770,7 @@
               <li><strong>Full Record CRUD &amp; Hierarchy:</strong> Click <strong>+ Add Vehicle Job / + Add Process</strong> to create entries, <strong>Edit</strong> to modify bursts, priority, or check-in/arrival time, <strong>+ Child</strong> to spawn a linked sub-job/child process, <strong>Terminate</strong> to halt it, or <strong>Delete</strong> to remove it.</li>
               <li><strong>"Why?" Explainer &amp; Shift Replay / Time Machine:</strong> Click any timeline/Gantt block to inspect why that job/process was dispatched at that tick, jump straight to its checkpoint/snapshot, scrub past ticks, or click <strong>Resume Here</strong> to branch.</li>
               <li><strong>Gridlock / Deadlock Demo &amp; Manual Actions:</strong> Click <strong>Simulate Gridlock / Run Deadlock Demo</strong> to trigger a 2-job circular wait and <strong>Resolve</strong> to recover, or use <strong>+ Mechanic Task / createThread()</strong>, <strong>Finish Task / joinThread()</strong>, <strong>Request Equipment / requestIO()</strong>, and <strong>Yield Service Bay / yieldProcess()</strong>.</li>
+              <li><strong>Benchmarking &amp; Testing Suite:</strong> Evaluates <strong>FCFS</strong>, <strong>SJF</strong>, <strong>Round Robin</strong>, and <strong>Priority</strong> across all 3 workloads using the live execution engine without altering your active session, verifying completion, reproducibility, and metric accuracy with consolidated tables and charts.</li>
             </ul>
           </section>
         </div>
