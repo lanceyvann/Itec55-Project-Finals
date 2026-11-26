@@ -1,14 +1,12 @@
 // =========================================================
-// PitStop OS - Resource & Mutex Management (Phase 6)
+// Resource & Mutex Management (Phase 6)
 // Manages the two primary service equipment resources:
 // 1. Pneumatic Tire Changer
 // 2. Digital Dynamic Wheel Balancer
 // =========================================================
 
 import {
-  PROCESS_STATES,
-  getProcessByPid,
-  transitionProcessState,
+  PROCESS_STATES, getProcessByPid, transitionProcessState,
 } from './processes.js';
 
 export const EQUIPMENT_IDS = {
@@ -20,9 +18,7 @@ let resources = [];
 let deadlockDetected = false;
 let deadlockMessage = '';
 
-/**
- * Initializes the two primary tire shop equipment resources.
- */
+/*Initializes the two primary tire shop equipment resources.*/
 export function resetResources() {
   resources = [
     {
@@ -61,19 +57,15 @@ export function getDeadlockStatus() {
   };
 }
 
-/**
- * Maps a tire service type to its primary equipment resource (if any).
- */
+/*Maps a tire service type to its primary equipment resource (if any).*/
 export function getRequiredResourceForService(serviceType) {
   if (serviceType === 'Tire Replacement') return EQUIPMENT_IDS.CHANGER;
   if (serviceType === 'Wheel Balancing') return EQUIPMENT_IDS.BALANCER;
   return null;
 }
 
-/**
- * Attempts to acquire a mutex lock on an equipment resource for a process.
- * Returns { acquired: boolean, reason: string }.
- */
+/*Attempts to acquire a mutex lock on an equipment resource for a process. 
+Returns { acquired: boolean, reason: string }.*/
 export function acquireResource(resourceId, pid, tick = 0) {
   const res = getResourceById(resourceId);
   const pcb = getProcessByPid(pid);
@@ -127,10 +119,8 @@ export function acquireResource(resourceId, pid, tick = 0) {
   };
 }
 
-/**
- * Releases a resource mutex held by a process and wakes the next waiting PID.
- * Returns array of woken PIDs so the scheduler can re-enqueue them.
- */
+/*Releases a resource mutex held by a process and wakes the next waiting PID. 
+Returns array of woken PIDs so the scheduler can re-enqueue them.*/
 export function releaseResource(resourceId, pid = null, tick = 0) {
   const res = getResourceById(resourceId);
   if (!res || res.ownerPid === null) return [];
@@ -181,9 +171,7 @@ export function releaseResource(resourceId, pid = null, tick = 0) {
   return wokenPids;
 }
 
-/**
- * Releases all equipment mutexes held or awaited by a terminated process.
- */
+/*Releases all equipment mutexes held or awaited by a terminated process.*/
 export function releaseAllResourcesForPid(pid, tick = 0) {
   const numPid = Number(pid);
   const woken = [];
