@@ -1,8 +1,5 @@
-// =========================================================
-// Kernel & System Call Interface (Phase 6)
-// Manages User Mode / Kernel Mode transitions, privileged
-// system calls (integrated with TCBs and Resources), and log.
-// =========================================================
+// Kernel & System Call Interface
+// Manages User Mode / Kernel Mode
 
 import {
   PROCESS_STATES, addProcess, deleteProcess, getProcessByPid, 
