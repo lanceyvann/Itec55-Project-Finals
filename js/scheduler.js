@@ -1,9 +1,4 @@
-// =========================================================
-// CPU Scheduling Engine (Phase 3)
-// Implements FCFS, SJF (Non-Preemptive), Round Robin, and Priority Scheduling with Ready Queue, I/O progression,
-// Context Switch tracking, and plain-language "Why?" reasons.
-// =========================================================
-
+// CPU Scheduling Engine (Some values are pre-defined)
 import {
   PROCESS_STATES, getAllProcesses, getProcessByPid, transitionProcessState,
 } from './processes.js';
