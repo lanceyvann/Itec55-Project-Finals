@@ -1,9 +1,7 @@
-// =========================================================
-// Resource & Mutex Management (Phase 6)
+// Resource & Mutex Management
 // Manages the two primary service equipment resources:
 // 1. Pneumatic Tire Changer
 // 2. Digital Dynamic Wheel Balancer
-// =========================================================
 
 import {
   PROCESS_STATES, getProcessByPid, transitionProcessState,
