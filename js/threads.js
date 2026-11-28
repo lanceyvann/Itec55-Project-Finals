@@ -1,8 +1,4 @@
-// =========================================================
-// Thread Management (TCB) (Phase 6)
-// Manages multiple Mechanic Service Tasks (threads) per
-// Vehicle Service Job (process), private vs shared data.
-// =========================================================
+// Thread Management (TCB)
 
 import { PROCESS_STATES, getAllProcesses, getProcessByPid } from './processes.js';
 
