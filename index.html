@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PitStop OS — Tire Service Workshop Mini-OS Simulator</title>
+    <title>PitStop OS — Tire Replacement Shop Mini-OS Simulator</title>
     <meta
       name="description"
       content="Scenario-driven mini-OS simulator demonstrating processes, threads, CPU scheduling, shared equipment locks, kernel calls, and deadlock in a tire service workshop."
@@ -11,7 +11,7 @@
     <meta property="og:title" content="PitStop OS — Tire Service Workshop Mini-OS Simulator" />
     <meta
       property="og:description"
-      content="Interactive ITEC 55 operating system simulator mapped to automotive tire service operations."
+      content="Interactive operating system simulator mapped to tire replacement operations."
     />
     <meta property="og:type" content="website" />
     <link rel="stylesheet" href="/css/style.css" />
@@ -26,7 +26,7 @@
             <div class="brand-copy">
               <h1 class="brand-title">PitStop OS</h1>
               <p class="brand-subtitle" data-i18n="brandSubtitle">
-                Automotive Tire Service Workshop Simulator
+                Automotive Tire Replacement Shop Simulator
               </p>
             </div>
           </div>
@@ -59,7 +59,7 @@
             data-nav-target="scheduler-section"
             data-i18n="navScheduler"
           >
-            Service Bay &amp; Gantt
+            Service Bay &amp; Timeline
           </button>
           <button
             type="button"
@@ -67,7 +67,7 @@
             data-nav-target="pcb-section"
             data-i18n="navProcesses"
           >
-            Vehicle Records
+            Vehicle Job Records
           </button>
           <button
             type="button"
@@ -83,7 +83,7 @@
             data-nav-target="kernel-section"
             data-i18n="navKernel"
           >
-            Operations Log
+            Shop Operations Log
           </button>
           <button
             type="button"
@@ -116,11 +116,11 @@
             class="btn btn-secondary"
             title="Open Story Mode & OS Mode Concept Guide"
           >
-            Guide
+            Terms
           </button>
 
           <button type="button" id="open-add-job-btn" class="btn btn-primary" data-i18n="addJobBtn">
-            + Add Vehicle Job
+            New vehicle
           </button>
         </div>
       </header>
@@ -207,17 +207,17 @@
           </article>
 
           <article class="kpi-card">
-            <span class="kpi-label" data-i18n="kpiRunning">Undergoing Tire Service</span>
+            <span class="kpi-label" data-i18n="kpiRunning">In Service Bay</span>
             <strong class="kpi-value tabular text-green" id="stat-running-jobs">0</strong>
           </article>
 
           <article class="kpi-card">
-            <span class="kpi-label" data-i18n="kpiWaiting">Waiting for Equipment</span>
+            <span class="kpi-label" data-i18n="kpiWaiting">Waiting for Mechanic</span>
             <strong class="kpi-value tabular text-amber" id="stat-waiting-jobs">0</strong>
           </article>
 
           <article class="kpi-card">
-            <span class="kpi-label" data-i18n="kpiCompleted">Service Completed</span>
+            <span class="kpi-label" data-i18n="kpiCompleted">Job Completed</span>
             <strong class="kpi-value tabular text-muted" id="stat-completed-jobs">0</strong>
           </article>
 
@@ -248,7 +248,7 @@
 
               <div class="bay-and-queues">
                 <div class="active-bay-box">
-                  <div class="sub-label" data-i18n="cpuLabel">Active Service Bay (Running)</div>
+                  <div class="sub-label" data-i18n="cpuLabel">Active Service Bay (In Service)</div>
                   <div id="active-bay-card" class="bay-empty">
                     No vehicle currently in bay (Idle)
                   </div>
@@ -257,7 +257,7 @@
                 <div class="queues-stack">
                   <div class="queue-box">
                     <div class="sub-label" data-i18n="readyQueueLabel">
-                      Vehicles Waiting for Service (Ready Queue)
+                      Vehicles Waiting for Tire
                     </div>
                     <div id="ready-queue-list" class="queue-items">
                       <span class="empty-hint">Queue empty</span>
@@ -266,7 +266,7 @@
 
                   <div class="queue-box">
                     <div class="sub-label" data-i18n="waitingQueueLabel">
-                      Waiting for Equipment / I/O (Waiting Queue)
+                      Equipment & Mechanic Wait Line
                     </div>
                     <div id="waiting-queue-list" class="queue-items">
                       <span class="empty-hint">No vehicles waiting</span>
@@ -350,13 +350,13 @@
             <section id="resources-section" class="panel">
               <div class="panel-header">
                 <h2 class="panel-title" data-i18n="threadTitle">
-                  Mechanic Service Tasks (Threads / TCB)
+                  Mechanic Service Tasks
                 </h2>
                 <span class="panel-meta" id="selected-process-label">No job selected</span>
               </div>
 
               <div class="thread-shared-box">
-                <div class="sub-label" data-i18n="sharedResourcesLabel">Shared Work-Order Resources</div>
+                <div class="sub-label" data-i18n="sharedResourcesLabel">Shared Work-Order Space & Equipment</div>
                 <p id="shared-resources-text" class="muted-note">
                   Select a vehicle job from the table to inspect shared work-order memory and
                   individual mechanic thread registers.
@@ -368,9 +368,9 @@
                   <thead>
                     <tr>
                       <th data-i18n="colTid">Task ID</th>
-                      <th data-i18n="colTaskName">Mechanic Task</th>
+                      <th data-i18n="colTaskName">Mechanic Service Task</th>
                       <th data-i18n="colTcbState">Task Status</th>
-                      <th data-i18n="colPrivateRegs">Private Registers</th>
+                      <th data-i18n="colPrivateRegs">Mechanic Task Clipboard</th>
                     </tr>
                   </thead>
                   <tbody id="tcb-table-body">
@@ -386,7 +386,7 @@
             <section class="panel panel-grow">
               <div class="panel-header">
                 <h2 class="panel-title" data-i18n="equipmentTitle">
-                  Service Equipment &amp; Mutex Locks
+                  Exclusive Equipment &amp; Mutex Locks
                 </h2>
                 <span class="panel-meta" id="deadlock-status-label">Status: Normal</span>
               </div>
@@ -439,7 +439,7 @@
         <section id="pcb-section" class="panel">
           <div class="panel-header">
             <h2 class="panel-title" data-i18n="pcbTableTitle">
-              Vehicle Service Records (Process Control Blocks)
+              Vehicle Job Records
             </h2>
             <span class="panel-meta" data-i18n="pcbHint">Click a vehicle record to view mechanic tasks</span>
           </div>
@@ -452,11 +452,11 @@
                   <th data-i18n="colPpid">Parent Job</th>
                   <th data-i18n="colJobName">Vehicle Job</th>
                   <th data-i18n="colServiceType">Service Type</th>
-                  <th data-i18n="colPcbState">Shop Status</th>
-                  <th data-i18n="colPriority">Priority</th>
-                  <th data-i18n="colArrival">Check-In</th>
-                  <th class="col-center" data-i18n="colBurst">Service / Equip</th>
-                  <th data-i18n="colRemaining">Remaining</th>
+                  <th data-i18n="colPcbState">Tire Status</th>
+                  <th data-i18n="colPriority">Service Priority</th>
+                  <th data-i18n="colArrival">Check-In Time</th>
+                  <th class="col-center" data-i18n="colBurst">Bay/ Equip Time</th>
+                  <th data-i18n="colRemaining">Remaining Bay Time</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -475,7 +475,7 @@
           <section id="kernel-section" class="panel">
             <div class="panel-header">
               <h2 class="panel-title" data-i18n="kernelTitle">
-                Shop Operations Manager (Kernel Log)
+                Shop Operations Log
               </h2>
               <button type="button" id="btn-clear-log" class="btn btn-secondary btn-sm">
                 Clear
@@ -484,13 +484,13 @@
 
             <div class="syscall-bar" aria-label="Manual system calls">
               <button type="button" class="btn btn-secondary btn-sm" data-syscall="createThread" data-i18n="syscallCreateThread">
-                + Mechanic Task
+                Add Mechanic Task
               </button>
               <button type="button" class="btn btn-secondary btn-sm" data-syscall="joinThread" data-i18n="syscallJoinThread">
-                Finish Task
+                Finish Mechanic Task
               </button>
               <button type="button" class="btn btn-secondary btn-sm" data-syscall="requestIO" data-i18n="syscallRequestIO">
-                Request Equipment
+                Request Tire Equipment
               </button>
               <button type="button" class="btn btn-secondary btn-sm" data-syscall="yieldProcess" data-i18n="syscallYieldProcess">
                 Yield Service Bay
@@ -678,7 +678,7 @@
     <div id="add-job-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="add-job-title">
       <div class="modal-card">
         <div class="modal-header">
-          <h2 id="add-job-title">Add Vehicle Service Job</h2>
+          <h2 id="add-job-title">Check-In New Vehicle</h2>
           <button type="button" id="close-add-job-btn" class="btn btn-secondary btn-sm">
             Close
           </button>
@@ -747,7 +747,7 @@
     <div id="pcb-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="pcb-modal-title">
       <div class="modal-card">
         <div class="modal-header">
-          <h2 id="pcb-modal-title" data-i18n="pcbModalTitle">Vehicle Service Record (PCB)</h2>
+          <h2 id="pcb-modal-title" data-i18n="pcbModalTitle">Vehicle Job Record</h2>
           <button type="button" id="close-pcb-modal-btn" class="btn btn-secondary btn-sm">
             Close
           </button>
