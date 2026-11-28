@@ -1,9 +1,4 @@
-// =========================================================
-// Simulation Orchestrator & Time Machine (Phase 8)
-// Coordinates simulation boot/reset, presets, tick steps,
-// Deadlock demo, and Time Machine snapshot history/replay.
-// =========================================================
-
+// Coordinates simulation + Deadlock, and Time Machine
 import {
   exportProcessState, getAllProcesses, importProcessState,
   resetProcesses, resetProcessesForReplay, setSelectedPid,
