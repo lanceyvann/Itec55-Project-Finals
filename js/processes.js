@@ -1,8 +1,6 @@
-// =========================================================
-// Process & PCB Management (Phase 2)
-// Manages Vehicle Service Jobs, PCBs, Parent-Child links,
-// and the 5-State Process Lifecycle.
-// =========================================================
+// Process & PCB Management
+// Manages Vehicle Service Jobs, PCBs, Parent-Child links, and the 5-State Process Lifecycle.
+
 
 export const PROCESS_STATES = {
   NEW: 'New', READY: 'Ready', RUNNING: 'Running',
