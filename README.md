@@ -57,7 +57,7 @@ PitStop-OS/
 
 ### Option 1: Instant Cloud Access (Recommended)
 Open the compiled production deployment directly in any modern web browser:
-* **Live URL:** [https://vercel.app](https://vercel.app)
+* **Live URL:** [https://itec55-pitstopos-finals.vercel.app/](https://itec55-pitstopos-finals.vercel.app/)
 
 ### Option 2: Run Locally via Vite Development Server
 1. Extract the project ZIP archive and open a terminal inside the root folder:
