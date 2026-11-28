@@ -1,8 +1,4 @@
-// =========================================================
-// Main UI Controller (Phase 3)
-// Wires simulation playback (Start, Pause, Step, Reset), algorithm/quantum/speed selectors, presets, and PCB UI.
-// =========================================================
-
+// MAIN SIMULATION CONTROLLER
 import {
   PROCESS_STATES, getAllProcesses, getProcessByPid, getProcessSummaryCounts,
   getSelectedPid, setSelectedPid, spawnChildProcess, updateProcessPriority,
@@ -33,12 +29,12 @@ import { DUAL_VIEW_TERMINOLOGY } from './guide.js';
 
 // Dual View Terminology Dictionary (Story View <-> OS View)
 const VIEW_LABELS = {
-  story: {
-    brandSubtitle: 'Automotive Tire Service Workshop Simulator',
+    story: {
+    brandSubtitle: 'Automotive Tire Replacement Shop Simulator',
     navScheduler: 'Service Bay & Timeline',
-    navProcesses: 'Vehicle Records',
+    navProcesses: 'Vehicle Job Records',
     navResources: 'Mechanics & Equipment',
-    navKernel: 'Operations Log',
+    navKernel: 'Shop Operations Log',
     navBenchmark: 'Shop Benchmarks',
     labelQuantum: 'Bay Turn',
     presetBalanced: 'Balanced Shop Mix',
@@ -49,15 +45,15 @@ const VIEW_LABELS = {
     workloadCustomTag: 'Custom',
     rushHourBtn: 'Rush Hour',
     kpiTotal: 'Total Vehicle Jobs',
-    kpiRunning: 'Undergoing Tire Service',
-    kpiWaiting: 'Waiting for Equipment',
-    kpiCompleted: 'Service Completed',
+    kpiRunning: 'In Service Bay',
+    kpiWaiting: 'Waiting for Mechanic',
+    kpiCompleted: 'Job Completed',
     kpiUtilization: 'Active Bay Utilization',
     baySectionTitle: 'Active Service Bay & Waiting Lines',
     contextSwitchLabel: 'Service Bay Changeovers',
     cpuLabel: 'Active Service Bay (In Service)',
-    readyQueueLabel: 'Vehicles Waiting for Bay',
-    waitingQueueLabel: 'Vehicles Waiting for Equipment',
+    readyQueueLabel: 'Vehicles Waiting for Tire',
+    waitingQueueLabel: 'Equipment & Mechanic Wait Line',
     ganttTitle: 'Service Bay Timeline & Shop Metrics',
     ganttHint: 'Click any bay block to inspect "Why?"',
     metricWaitLabel: 'Avg Bay Line Wait',
@@ -66,30 +62,30 @@ const VIEW_LABELS = {
     metricUtilLabel: 'Bay Utilization',
     whyTitle: '"Why?" Service Bay Assignment Explainer',
     whyJumpBtn: 'View in Shift Replay',
-    pcbTableTitle: 'Vehicle Service Records',
+    pcbTableTitle: 'Vehicle Job Records',
     pcbHint: 'Click a vehicle record to inspect mechanic tasks',
     colPid: 'Job ID',
-    colPpid: 'Parent Job',
+    colPpid: 'Main Job',
     colJobName: 'Vehicle Job',
     colServiceType: 'Service Type',
-    colPcbState: 'Shop Status',
-    colPriority: 'Priority',
-    colArrival: 'Check-In',
-    colBurst: 'Bay / Equip',
-    colRemaining: 'Remaining',
+    colPcbState: 'Tire Status',
+    colPriority: 'Service Priority',
+    colArrival: 'Check-In Time',
+    colBurst: 'Bay / Equip Time',
+    colRemaining: 'Remaining Bay Time',
     threadTitle: 'Mechanic Service Tasks',
-    sharedResourcesLabel: 'Shared Work-Order Workspace',
+    sharedResourcesLabel: 'Shared Work-Order Space & Equipment',
     colTid: 'Task ID',
-    colTaskName: 'Mechanic Task',
+    colTaskName: 'Mechanic Service Task',
     colTcbState: 'Task Status',
-    colPrivateRegs: 'Mechanic Clipboard',
-    equipmentTitle: 'Shop Equipment & Tool Locks',
+    colPrivateRegs: 'Mechanic Task Clipboard',
+    equipmentTitle: 'Exclusive Equipment Locks',
     deadlockTitle: 'Shop Gridlock Demonstration',
     deadlockDemoBtn: 'Simulate Gridlock',
-    kernelTitle: 'Shop Operations Manager Log',
-    syscallCreateThread: '+ Mechanic Task',
-    syscallJoinThread: 'Finish Task',
-    syscallRequestIO: 'Request Equipment',
+    kernelTitle: 'Shop Operations Log',
+    syscallCreateThread: '+ Add Mechanic Task',
+    syscallJoinThread: 'Finish Mechanic Task',
+    syscallRequestIO: 'Request Tire Equipment',
     syscallYieldProcess: 'Yield Service Bay',
     initialLogPlaceholder: 'Shop floor ready. Waiting for shift start.',
     tmTitle: 'Shift Replay (Time Machine)',
@@ -126,18 +122,18 @@ const VIEW_LABELS = {
     benchOpenProfileBtn: 'Open Multi-Metric View',
     benchCardResultsTitle: 'Consolidated Shop Results Table',
     benchOpenResultsBtn: 'Open Benchmark Results',
-    pcbModalTitle: 'Vehicle Service Record',
-    addJobBtn: '+ Add Vehicle Job',
+    pcbModalTitle: 'Vehicle Job Record',
+    addJobBtn: '+ Check-In New Vehicle',
     fieldJobName: 'Vehicle / Job Name',
     fieldServiceType: 'Tire Service Type',
-    fieldPriority: 'Service Priority (1 = Highest)',
-    fieldArrival: 'Check-In Tick',
-    fieldCpuBurst: 'Bay Service (Ticks)',
-    fieldIoBurst: 'Equip Wait (Ticks)',
-    fieldParentPid: 'Parent Job (Optional)',
+    fieldPriority: 'Service Priority (1 = Most Urgent)',
+    fieldArrival: 'Check-In Time (Tick)',
+    fieldCpuBurst: 'Tire Replacement Service Time (Ticks)',
+    fieldIoBurst: 'Equipment Operation Time (Ticks)',
+    fieldParentPid: 'Main Vehicle Job',
   },
   os: {
-    brandSubtitle: 'Scenario-Driven Mini-OS Simulator',
+    brandSubtitle: 'Mini Operating System Simulator',
     navScheduler: 'CPU & Gantt',
     navProcesses: 'PCB Table',
     navResources: 'Threads & Mutexes',
@@ -243,8 +239,10 @@ const VIEW_LABELS = {
 
 const STORY_STATE_LABELS = {
   New: 'Checked In',
-  Ready: 'Waiting for Service', Running: 'Undergoing Tire Service',
-  Waiting: 'Waiting for Equipment', Terminated: 'Service Completed',
+  Ready: 'Waiting for Tire',
+  Running: 'Replacing Tire',
+  Waiting: 'Waiting for Equipment',
+  Terminated: 'Tire Replaced',
 };
 
 const STORY_LOG_SOURCES = {
@@ -258,10 +256,14 @@ const OS_LOG_SOURCES = {
 };
 
 const STORY_SYSCALL_NAMES = {
-  'createProcess()': 'Check-In Vehicle', 'terminateProcess()': 'Cancel / Complete Job',
-  'updateProcess()': 'Update Service Order', 'deleteProcess()': 'Remove Vehicle Record',
-  'createThread()': 'Add Mechanic Task', 'joinThread()': 'Finish Mechanic Task',
-  'requestIO()': 'Request Equipment', 'yieldProcess()': 'Yield Service Bay',
+  'createProcess()': 'Check-In New Vehicle',
+  'terminateProcess()': 'Complete / Cancel Vehicle Job',
+  'updateProcess()': 'Update Vehicle Job Record',
+  'deleteProcess()': 'Remove Vehicle Job Record',
+  'createThread()': 'Add Mechanic Task',
+  'joinThread()': 'Finish Mechanic Task',
+  'requestIO()': 'Request Tire Equipment',
+  'yieldProcess()': 'Yield Service Bay',
 };
 
 let currentViewMode = 'story';
@@ -580,8 +582,8 @@ function toStoryText(text) {
   out = out
     .replace(/\bPID\s+(\d+)\b/g, 'Job #$1')
     .replace(/\bTID\s+(\d+)\b/g, 'Task #$1')
-    .replace(/\bReady Queue\b/g, 'Bay Waiting Line')
-    .replace(/\bWaiting Queue\b/g, 'Equipment Wait Line')
+    .replace(/\bReady Queue\b/g, 'Vehicles Waiting for Tire')
+    .replace(/\bWaiting Queue\b/g, 'Equipment & Mechanic Wait Line')
     .replace(/\bContext Switch\b/g, 'Service Bay Changeover')
     .replace(/\bDeadlock\b/g, 'Gridlock')
     .replace(/\bCPU\b/g, 'Active Service Bay')
@@ -901,7 +903,7 @@ function renderQueuesAndBay() {
           )
           .join('')
       : `<span class="empty-hint">${
-          currentViewMode === 'story' ? 'Waiting line empty' : 'Ready queue empty'
+          currentViewMode === 'story' ? 'No vehicles waiting for tire' : 'Ready queue empty'
         }</span>`;
 
   dom.waitingQueueList.innerHTML =
@@ -1155,11 +1157,11 @@ function populateParentOptions(excludePid = null, selectedParentPid = null) {
 function syncJobModalCopy() {
   const isStory = currentViewMode === 'story';
   if (editingPid !== null) {
-    dom.addJobTitle.textContent = isStory ? 'Edit Vehicle Service Job' : 'Edit Process';
+    dom.addJobTitle.textContent = isStory ? 'Edit Vehicle Record Job' : 'Edit Process';
     dom.submitJobBtn.textContent = isStory ? 'Save Vehicle Job' : 'Save Process';
   } else {
-    dom.addJobTitle.textContent = isStory ? 'Add Vehicle Service Job' : 'Add New Process';
-    dom.submitJobBtn.textContent = isStory ? 'Create Service Job' : 'Create Process';
+    dom.addJobTitle.textContent = isStory ? 'Check-In New Vehicle' : 'Add New Process';
+    dom.submitJobBtn.textContent = isStory ? 'Check-In Vehicle' : 'Create Process';
   }
   dom.inputJobName.placeholder = isStory
     ? 'e.g., Sedan Civic - Front Tires'
@@ -1335,25 +1337,25 @@ function openPcbModal(pid) {
 
   dom.pcbModalBody.innerHTML = `
     <div class="pcb-kv"><span>${isStory ? 'Job ID' : 'PID'}</span><strong class="tabular">${formatId(pcb.pid)}</strong></div>
-    <div class="pcb-kv"><span>${isStory ? 'Parent Job (PPID)' : 'Parent Process (PPID)'}</span><strong class="tabular">${escapeHtml(formatPpidDisplay(pcb.ppid, true))}</strong></div>
-    <div class="pcb-kv"><span>${isStory ? 'Shop Status' : 'Current State'}</span><strong class="${getStateClass(pcb.state)}">${escapeHtml(formatStateLabel(pcb.state))}</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Main Vehicle Job' : 'Parent Process (PPID)'}</span><strong class="tabular">${escapeHtml(formatPpidDisplay(pcb.ppid, true))}</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Tire Status' : 'Current State'}</span><strong class="${getStateClass(pcb.state)}">${escapeHtml(formatStateLabel(pcb.state))}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Vehicle Job' : 'Process Name'}</span><strong>${escapeHtml(pcb.name)}</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Service Type' : 'Workload Type'}</span><strong>${escapeHtml(pcb.serviceType)}</strong></div>
-    <div class="pcb-kv"><span>${isStory ? 'Priority / Check-In' : 'Priority / Arrival'}</span><strong class="tabular">P${pcb.priority} / Tick ${pcb.arrivalTime}</strong></div>
-    <div class="pcb-kv"><span>${isStory ? 'Configured Bay / Equip' : 'Configured CPU / I/O Burst'}</span><strong class="tabular">${pcb.cpuBurst}t / ${pcb.ioBurst}t</strong></div>
-    <div class="pcb-kv"><span>${isStory ? 'Bay / Equip Remaining' : 'CPU / I/O Remaining'}</span><strong class="tabular">${pcb.remainingTime}t / ${pcb.ioRemaining}t</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Service Priority / Check-In Tyme' : 'Priority / Arrival'}</span><strong class="tabular">P${pcb.priority} / Tick ${pcb.arrivalTime}</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Tire Service / Equipment Time' : 'Configured CPU / I/O Burst'}</span><strong class="tabular">${pcb.cpuBurst}t / ${pcb.ioBurst}t</strong></div>
+    <div class="pcb-kv"><span>${isStory ? 'Remaining Bay / Equip Time' : 'CPU / I/O Remaining'}</span><strong class="tabular">${pcb.remainingTime}t / ${pcb.ioRemaining}t</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Queue Wait / Shop Turnaround' : 'Wait / Turnaround'}</span><strong class="tabular">${pcb.waitingTime}t / ${pcb.completionTime !== null ? pcb.completionTime - pcb.arrivalTime : '-'}t</strong></div>
     <div class="pcb-kv"><span>${isStory ? 'Bay Response Time' : 'Response Time'}</span><strong class="tabular">${pcb.startTime !== null ? pcb.startTime - pcb.arrivalTime : '-'}t</strong></div>
     <div class="pcb-kv pcb-kv-full">
-      <span>${isStory ? 'Mechanic Clipboard (Simulated Registers)' : 'Simulated Registers'}</span>
+      <span>${isStory ? 'Job Progress Markers (Simulated Registers)' : 'Simulated Registers'}</span>
       <strong class="tabular">PC: ${pcb.registers.PC} · ACC: ${pcb.registers.ACC} · IR: ${pcb.registers.IR} · SP: ${pcb.registers.SP}</strong>
     </div>
     <div class="pcb-kv pcb-kv-full">
-      <span>${isStory ? `Mechanic Tasks Summary (${threads.length} total, ${activeThreadCount} active)` : `Thread Control Blocks (TCB Summary: ${threads.length} total, ${activeThreadCount} active)`}</span>
+      <span>${isStory ? `Mechanic Service Tasks (${threads.length} total, ${activeThreadCount} active)` : `Thread Control Blocks (TCB Summary: ${threads.length} total, ${activeThreadCount} active)`}</span>
       <div class="history-list">${threadsHtml}</div>
     </div>
     <div class="pcb-kv pcb-kv-full">
-      <span>${isStory ? 'Shop Service Lifecycle History' : '5-State Lifecycle History'}</span>
+      <span>${isStory ? 'Tire Story Lifecycle History' : '5-State Lifecycle History'}</span>
       <div class="history-list">${historyHtml}</div>
     </div>
   `;
@@ -1452,7 +1454,7 @@ function renderThreadsPanel() {
   if (!selectedPcb) {
     dom.sharedResourcesText.textContent =
       currentViewMode === 'story'
-        ? 'Select a vehicle record from the table to inspect shared work-order workspace details and individual mechanic task clipboards.'
+        ? 'Select a vehicle job record from the table to inspect Shared Work-Order Space & Equipment and each Mechanic Task Clipboard.'
         : 'Select a process row from the PCB table to inspect shared process memory and individual thread private registers.';
     const emptyThreadsText =
       currentViewMode === 'story' ? 'No mechanic tasks to display.' : 'No threads to display.';
@@ -1463,7 +1465,7 @@ function renderThreadsPanel() {
   const shared = getSharedProcessResources(selectedPcb);
   if (currentViewMode === 'story') {
     dom.sharedResourcesText.innerHTML = `
-      <strong>Shared:</strong> ${escapeHtml(shared.workOrder)} · Bay Workspace <span class="tabular">${shared.memorySpace}</span> · Equipment Locks: ${escapeHtml(shared.equipmentLocks)}
+      <strong>Shared Work-Order Space & Equipment:</strong> ${escapeHtml(shared.workOrder)} · Service Bay Space <span class="tabular">${shared.memorySpace}</span> · Equipment Locks: ${escapeHtml(shared.equipmentLocks)}
     `;
   } else {
     dom.sharedResourcesText.innerHTML = `
@@ -1523,7 +1525,7 @@ function renderResourcesPanel() {
     .map((res) => {
       const statusText = res.locked
         ? currentViewMode === 'story'
-          ? 'In Use (Equipment Lock)'
+          ? 'In Use (Exclusive Equipment Lock)'
           : 'Locked (Mutex Held)'
         : 'Available';
       const statusClass = res.locked ? 'text-amber' : 'text-green';
@@ -2489,5 +2491,4 @@ function init() {
   executeAndRenderBenchmarks();
   syncActiveNavOnScroll();
 }
-
 init();
